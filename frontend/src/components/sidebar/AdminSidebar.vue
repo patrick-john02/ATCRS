@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSidebarStore } from '@/stores/sidebar'
 import { RouterLink } from 'vue-router'
+import { onMounted } from 'vue'
 
 import {
   Sidebar,
@@ -19,6 +20,11 @@ import {
 
 const props = defineProps<SidebarProps>()
 const sidebarStore = useSidebarStore()
+
+
+onMounted(() => {
+  sidebarStore.initialize()
+})
 
 // This is sample data.
 const data = {

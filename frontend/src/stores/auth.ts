@@ -1,19 +1,45 @@
-// stores/auth.ts
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
+import api from '@/utils/axios';
+// import axios from 'axios';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    isAuthenticated: false,
-    user: null as null | { name: string; role: string }
+    accessToken: '',
+    refreshToken: '',
+    user: null as Record<string, any> | null,
   }),
+
   actions: {
-    login(userData: any) {
-      this.user = userData
-      this.isAuthenticated = true
+    async login(username: string, password: string) {
+      try {
+        const response = await api.post('/token/', {
+          username,
+          password,
+        });
+
+        const { access, refresh } = response.data;
+        this.accessToken = access;
+        this.refreshToken = refresh;
+
+        await this.fetchUser();
+      } catch (error) {
+        console.error(error);
+        throw new Error('Login failed');
+      }
     },
+
+    async fetchUser() {
+      const res = await api.get('/users/me/');
+      this.user = res.data;
+    },
+
     logout() {
-      this.user = null
-      this.isAuthenticated = false
+      this.accessToken = '';
+      this.refreshToken = '';
+      this.user = null;
     }
-  }
-})
+  },
+
+  // 👇 This is required for pinia-plugin-persistedstate
+  persist: true
+});

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useSidebarStore } from '@/stores/sidebar'
 
-
+const sidebarStore = useSidebarStore()
+sidebarStore.initialize()
 
 </script>
 
