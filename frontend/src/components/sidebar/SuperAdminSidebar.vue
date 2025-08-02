@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import {
   Sidebar,
   SidebarContent,
@@ -17,142 +16,59 @@ import {
 
 const props = defineProps<SidebarProps>()
 
-// This is sample data.
 const data = {
   navMain: [
     {
-      title: 'Getting Started',
+      title: 'Dashboard',
+      url: '/superadmin/dashboard',
+      items: [],
+    },
+    {
+      title: 'Admin Management',
       url: '#',
       items: [
-        {
-          title: 'Installation',
-          url: '#',
-        },
-        {
-          title: 'Project Structure',
-          url: '#',
-        },
+        { title: 'All Admins', url: '/superadmin/admins' },
+        { title: 'Add New Admin', url: '/superadmin/admins/create' },
       ],
     },
     {
-      title: 'Building Your Application',
+      title: 'User Overview',
       url: '#',
       items: [
-        {
-          title: 'Routing',
-          url: '#',
-        },
-        {
-          title: 'Data Fetching',
-          url: '#',
-          isActive: true,
-        },
-        {
-          title: 'Rendering',
-          url: '#',
-        },
-        {
-          title: 'Caching',
-          url: '#',
-        },
-        {
-          title: 'Styling',
-          url: '#',
-        },
-        {
-          title: 'Optimizing',
-          url: '#',
-        },
-        {
-          title: 'Configuring',
-          url: '#',
-        },
-        {
-          title: 'Testing',
-          url: '#',
-        },
-        {
-          title: 'Authentication',
-          url: '#',
-        },
-        {
-          title: 'Deploying',
-          url: '#',
-        },
-        {
-          title: 'Upgrading',
-          url: '#',
-        },
-        {
-          title: 'Examples',
-          url: '#',
-        },
+        { title: 'All Applicants', url: '/superadmin/applicants' },
+        { title: 'All Users', url: '/superadmin/users' },
       ],
     },
     {
-      title: 'API Reference',
+      title: 'Course & Department Settings',
       url: '#',
       items: [
-        {
-          title: 'Components',
-          url: '#',
-        },
-        {
-          title: 'File Conventions',
-          url: '#',
-        },
-        {
-          title: 'Functions',
-          url: '#',
-        },
-        {
-          title: 'next.config.js Options',
-          url: '#',
-        },
-        {
-          title: 'CLI',
-          url: '#',
-        },
-        {
-          title: 'Edge Runtime',
-          url: '#',
-        },
+        { title: 'Manage Courses', url: '/superadmin/courses' },
+        { title: 'Manage Departments', url: '/superadmin/departments' },
       ],
     },
     {
-      title: 'Architecture',
+      title: 'Academic Settings',
       url: '#',
       items: [
-        {
-          title: 'Accessibility',
-          url: '#',
-        },
-        {
-          title: 'Fast Refresh',
-          url: '#',
-        },
-        {
-          title: 'Next.js Compiler',
-          url: '#',
-        },
-        {
-          title: 'Supported Browsers',
-          url: '#',
-        },
-        {
-          title: 'Turbopack',
-          url: '#',
-        },
+        { title: 'Academic Years', url: '/superadmin/academic-years' },
+        { title: 'School Terms', url: '/superadmin/terms' },
       ],
     },
     {
-      title: 'Community',
+      title: 'System Monitoring',
       url: '#',
       items: [
-        {
-          title: 'Contribution Guide',
-          url: '#',
-        },
+        { title: 'Audit Logs', url: '/superadmin/logs' },
+        { title: 'Activity Reports', url: '/superadmin/activity' },
+      ],
+    },
+    {
+      title: 'System Settings',
+      url: '#',
+      items: [
+        { title: 'Site Configuration', url: '/superadmin/settings' },
+        { title: 'Database Backup', url: '/superadmin/backup' },
       ],
     },
   ],
@@ -178,6 +94,7 @@ const data = {
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarHeader>
+
     <SidebarContent>
       <SidebarGroup>
         <SidebarMenu>

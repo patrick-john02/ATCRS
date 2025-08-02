@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import {
   Sidebar,
   SidebarContent,
@@ -17,147 +16,56 @@ import {
 
 const props = defineProps<SidebarProps>()
 
-// This is sample data.
 const data = {
   navMain: [
     {
-      title: 'Getting Started',
+      title: 'Dashboard',
+      url: '/dashboard',
+      items: [],
+    },
+    {
+      title: 'Admission',
       url: '#',
       items: [
-        {
-          title: 'Installation',
-          url: '#',
-        },
-        {
-          title: 'Project Structure',
-          url: '#',
-        },
+        { title: 'Apply for Admission', url: '/admission/apply' },
+        { title: 'Admission Status', url: '/admission/status' },
+        { title: 'Upload Requirements', url: '/admission/requirements' },
       ],
     },
     {
-      title: 'Building Your Application',
+      title: 'Online Examination',
       url: '#',
       items: [
-        {
-          title: 'Routing',
-          url: '#',
-        },
-        {
-          title: 'Data Fetching',
-          url: '#',
-          isActive: true,
-        },
-        {
-          title: 'Rendering',
-          url: '#',
-        },
-        {
-          title: 'Caching',
-          url: '#',
-        },
-        {
-          title: 'Styling',
-          url: '#',
-        },
-        {
-          title: 'Optimizing',
-          url: '#',
-        },
-        {
-          title: 'Configuring',
-          url: '#',
-        },
-        {
-          title: 'Testing',
-          url: '#',
-        },
-        {
-          title: 'Authentication',
-          url: '#',
-        },
-        {
-          title: 'Deploying',
-          url: '#',
-        },
-        {
-          title: 'Upgrading',
-          url: '#',
-        },
-        {
-          title: 'Examples',
-          url: '#',
-        },
+        { title: 'Exam Instructions', url: '/exam/instructions' },
+        { title: 'Take Exam', url: '/exam/start' },
+        { title: 'Exam History', url: '/exam/history' },
       ],
     },
     {
-      title: 'API Reference',
+      title: 'Results',
       url: '#',
       items: [
-        {
-          title: 'Components',
-          url: '#',
-        },
-        {
-          title: 'File Conventions',
-          url: '#',
-        },
-        {
-          title: 'Functions',
-          url: '#',
-        },
-        {
-          title: 'next.config.js Options',
-          url: '#',
-        },
-        {
-          title: 'CLI',
-          url: '#',
-        },
-        {
-          title: 'Edge Runtime',
-          url: '#',
-        },
+        { title: 'View Scores', url: '/results/scores' },
+        { title: 'Download Result', url: '/results/download' },
       ],
     },
     {
-      title: 'Architecture',
-      url: '#',
-      items: [
-        {
-          title: 'Accessibility',
-          url: '#',
-        },
-        {
-          title: 'Fast Refresh',
-          url: '#',
-        },
-        {
-          title: 'Next.js Compiler',
-          url: '#',
-        },
-        {
-          title: 'Supported Browsers',
-          url: '#',
-        },
-        {
-          title: 'Turbopack',
-          url: '#',
-        },
-      ],
+      title: 'Announcements',
+      url: '/announcements',
+      items: [],
     },
     {
-      title: 'Community',
+      title: 'Support',
       url: '#',
       items: [
-        {
-          title: 'Contribution Guide',
-          url: '#',
-        },
+        { title: 'FAQs', url: '/support/faqs' },
+        { title: 'Contact Admin', url: '/support/contact' },
       ],
     },
   ],
 }
 </script>
+
 
 <template>
   <Sidebar v-bind="props">

@@ -17,6 +17,10 @@ const router = createRouter({
       path: '/forgot-password',
       component: () => import('@/pages/auth/ForgotPassword.vue'),
     },
+        {
+      path: '/signup',
+      component: () => import('@/pages/auth/Register.vue'),
+    },
 
     // Admin dashboard
     {

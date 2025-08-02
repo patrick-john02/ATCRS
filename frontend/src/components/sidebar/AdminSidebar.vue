@@ -21,152 +21,80 @@ import {
 const props = defineProps<SidebarProps>()
 const sidebarStore = useSidebarStore()
 
-
 onMounted(() => {
   sidebarStore.initialize()
 })
 
-// This is sample data.
 const data = {
   navMain: [
     {
-      title: 'Getting Started',
+      title: 'Dashboard',
+      url: '/admin/dashboard',
+      items: [],
+    },
+    {
+      title: 'Applicant Management',
       url: '#',
       items: [
-        {
-          title: 'Installation',
-          url: '#',
-        },
-        {
-          title: 'Project Structure',
-          url: '#',
-        },
+        { title: 'All Applicants', url: '/admin/applicants' },
+        { title: 'Pending Applications', url: '/admin/applicants/pending' },
+        { title: 'Verified Applicants', url: '/admin/applicants/verified' },
       ],
     },
     {
-      title: 'Building Your Application',
+      title: 'Exam Management',
       url: '#',
       items: [
-        {
-          title: 'Routing',
-          url: '#',
-        },
-        {
-          title: 'Data Fetching',
-          url: '#',
-          isActive: true,
-        },
-        {
-          title: 'Rendering',
-          url: '#',
-        },
-        {
-          title: 'Caching',
-          url: '#',
-        },
-        {
-          title: 'Styling',
-          url: '#',
-        },
-        {
-          title: 'Optimizing',
-          url: '#',
-        },
-        {
-          title: 'Configuring',
-          url: '#',
-        },
-        {
-          title: 'Testing',
-          url: '#',
-        },
-        {
-          title: 'Authentication',
-          url: '#',
-        },
-        {
-          title: 'Deploying',
-          url: '#',
-        },
-        {
-          title: 'Upgrading',
-          url: '#',
-        },
-        {
-          title: 'Examples',
-          url: '#',
-        },
+        { title: 'Question Bank', url: '/admin/exams/questions' },
+        { title: 'Create Exam', url: '/admin/exams/create' },
+        { title: 'Manage Exams', url: '/admin/exams' },
       ],
     },
     {
-      title: 'API Reference',
+      title: 'Exam Results',
       url: '#',
       items: [
-        {
-          title: 'Components',
-          url: '#',
-        },
-        {
-          title: 'File Conventions',
-          url: '#',
-        },
-        {
-          title: 'Functions',
-          url: '#',
-        },
-        {
-          title: 'next.config.js Options',
-          url: '#',
-        },
-        {
-          title: 'CLI',
-          url: '#',
-        },
-        {
-          title: 'Edge Runtime',
-          url: '#',
-        },
+        { title: 'View Results', url: '/admin/results' },
+        { title: 'Passed Applicants', url: '/admin/results/passed' },
+        { title: 'Failed Applicants', url: '/admin/results/failed' },
       ],
     },
     {
-      title: 'Architecture',
+      title: 'Course Management',
       url: '#',
       items: [
-        {
-          title: 'Accessibility',
-          url: '#',
-        },
-        {
-          title: 'Fast Refresh',
-          url: '#',
-        },
-        {
-          title: 'Next.js Compiler',
-          url: '#',
-        },
-        {
-          title: 'Supported Browsers',
-          url: '#',
-        },
-        {
-          title: 'Turbopack',
-          url: '#',
-        },
+        { title: 'List of Courses', url: '/admin/courses' },
+        { title: 'Add Course', url: '/admin/courses/create' },
       ],
     },
     {
-      title: 'Community',
+      title: 'User Management',
       url: '#',
       items: [
-        {
-          title: 'Contribution Guide',
-          url: '#',
-        },
+        { title: 'Admins', url: '/admin/users/admins' },
+        { title: 'Students', url: '/admin/users/students' },
+      ],
+    },
+    {
+      title: 'Announcements',
+      url: '#',
+      items: [
+        { title: 'Post Announcement', url: '/admin/announcements/create' },
+        { title: 'Manage Announcements', url: '/admin/announcements' },
+      ],
+    },
+    {
+      title: 'System Settings',
+      url: '#',
+      items: [
+        { title: 'Audit Logs', url: '/admin/settings/logs' },
+        { title: 'Site Configuration', url: '/admin/settings/config' },
       ],
     },
   ],
 }
 </script>
+
 
 <template>
   <Sidebar
@@ -174,12 +102,11 @@ const data = {
     :open="sidebarStore.isOpen"
     @update:open="sidebarStore.isOpen = $event"
   >
-
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" as-child>
-            <a href="#">
+            <RouterLink to="#">
               <div class="flex aspect-square size-8 items-center justify-center text-sidebar-primary-foreground">
                 <img src="@/assets/imgs/apayao.png" alt="Logo" class="h-8 w-8 object-contain rounded-lg" />
               </div>
@@ -187,26 +114,25 @@ const data = {
                 <span class="font-semibold">Admin</span>
                 <span class="">Dashboard</span>
               </div>
-            </a>
+            </RouterLink>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarHeader>
+
     <SidebarContent>
       <SidebarGroup>
         <SidebarMenu>
           <SidebarMenuItem v-for="item in data.navMain" :key="item.title">
             <SidebarMenuButton as-child>
-              <SidebarMenuButton as-child>
-                <RouterLink :to="item.url" class="font-medium">
-                  {{ item.title }}
-                </RouterLink>
-              </SidebarMenuButton>
+              <RouterLink :to="item.url" class="font-medium">
+                {{ item.title }}
+              </RouterLink>
             </SidebarMenuButton>
             <SidebarMenuSub v-if="item.items.length">
               <SidebarMenuSubItem v-for="childItem in item.items" :key="childItem.title">
                 <SidebarMenuSubButton as-child :is-active="childItem.isActive">
-                  <a :href="childItem.url">{{ childItem.title }}</a>
+                  <RouterLink :to="childItem.url">{{ childItem.title }}</RouterLink>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             </SidebarMenuSub>
@@ -214,6 +140,7 @@ const data = {
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
+
     <SidebarRail />
   </Sidebar>
 </template>

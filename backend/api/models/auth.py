@@ -34,7 +34,6 @@ class ApplicantProfile(models.Model):
         max_length=20, choices=USER_TYPE_CHOICES, default='applicant'
     )
 
-    # Only relevant for applicants
     birthdate = models.DateField(null=True, blank=True)
     contact_number = models.CharField(max_length=15, blank=True)
     address = models.TextField(blank=True)

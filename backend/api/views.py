@@ -34,4 +34,3 @@ class RegistrationView(mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = RegisterSerializer
     queryset = ApplicantProfile.objects.all()
     permission_classes = [AllowAny]
-    
