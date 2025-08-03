@@ -62,8 +62,7 @@ const router = createRouter({
     { path: 'admins', name: 'AllAdmins', component: () => import('@/pages/superAdmin/AllAdmins.vue'), meta: { breadcrumb: 'Admins' } },
     { path: 'applicants', name: 'AllApplicants', component: () => import('@/pages/superAdmin/Applicants.vue'), meta: { breadcrumb: 'Applicants' } },
 
-    // { path: 'courses', name: 'Courses', component: () => import('@/pages/superAdmin/courses/Index.vue'), meta: { breadcrumb: 'Courses' } },
-    // { path: 'departments', name: 'Departments', component: () => import('@/pages/superAdmin/departments/Index.vue'), meta: { breadcrumb: 'Departments' } },
+    { path: 'courses-and-departments', name: 'Courses and Departments', component: () => import('@/pages/superAdmin/CoursesAndDept.vue'), meta: { breadcrumb: 'Departments' } },
 
     // { path: 'academic-years', name: 'AcademicYears', component: () => import('@/pages/superAdmin/academicYears/Index.vue'), meta: { breadcrumb: 'Academic Years' } },
     // { path: 'terms', name: 'Terms', component: () => import('@/pages/superAdmin/terms/Index.vue'), meta: { breadcrumb: 'School Terms' } },

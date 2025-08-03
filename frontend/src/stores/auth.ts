@@ -40,6 +40,5 @@ export const useAuthStore = defineStore('auth', {
     }
   },
 
-  // 👇 This is required for pinia-plugin-persistedstate
   persist: true
 });

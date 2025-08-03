@@ -15,6 +15,10 @@ from api.services.admin_services import (
     ApplicantExamView,
     ApplicantAnswerView,
 )
+
+from api.services.super_admin_services import (
+    AdminUserViewSet
+)
 router = DefaultRouter()
 
 router.register(r'register', RegistrationView, basename='registration') 
@@ -28,6 +32,9 @@ router.register(r'questions', QuestionView, basename='questions')
 router.register(r'exams', ExamView, basename='exams')
 router.register(r'applicant-exam', ApplicantExamView, basename='applicant-exam')
 router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-answers')
+
+#super admin side
+router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
 
 
 

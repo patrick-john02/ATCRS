@@ -42,9 +42,9 @@ const data = {
     },
     {
       title: 'Course & Department Settings',
-      url: '#',
+      url: '/superadmin/courses-and-departments',
       items: [
-        { title: 'Courses & Departments', url: '/superadmin/courses' },
+        { title: 'Courses & Departments', url: '/superadmin/courses-and-departments' },
       ],
     },
     {
