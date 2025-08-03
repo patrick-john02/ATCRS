@@ -53,7 +53,7 @@ const router = createRouter({
     // Super Admin dashboard
 {
   path: '/superadmin',
-  component: () => import('@/pages/superAdmin/Dashboard.vue'),
+  component: () => import('@/components/layouts/SuperDashboardLayout.vue'),
   meta: { requiresAuth: true, role: 'superadmin', breadcrumb: 'Super Admin' },
   children: [
     { path: 'dashboard', name: 'SuperAdminDashboard', component: () => import('@/pages/superAdmin/Dashboard.vue'), meta: { breadcrumb: 'Dashboard' } },
@@ -73,6 +73,8 @@ const router = createRouter({
 
     // { path: 'settings', name: 'Settings', component: () => import('@/pages/superAdmin/settings/Index.vue'), meta: { breadcrumb: 'Site Configuration' } },
     // { path: 'backup', name: 'DatabaseBackup', component: () => import('@/pages/superAdmin/backup/Index.vue'), meta: { breadcrumb: 'Database Backup' } },
+
+    { path: 'profile', name: 'SuperAdminProfile', component: () => import('@/pages/superAdmin/Profile.vue'), meta: { breadcrumb: 'Profile' } },
   ],
 }
 

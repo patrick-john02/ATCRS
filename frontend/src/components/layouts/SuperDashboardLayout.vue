@@ -92,7 +92,9 @@ function logout() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-40">
               <DropdownMenuItem>
+                <RouterLink to="/superadmin/profile">
                 <User class="mr-2 h-4 w-4" /> Profile
+                </RouterLink>
               </DropdownMenuItem>
               <DropdownMenuItem @click="logout">
                 <span class="text-red-500">Logout</span>
@@ -104,6 +106,7 @@ function logout() {
 
       <main class="flex-1 p-4">
         <slot />
+        <router-view />
       </main>
     </SidebarInset>
   </SidebarProvider>

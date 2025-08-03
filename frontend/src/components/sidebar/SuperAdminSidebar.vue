@@ -44,8 +44,7 @@ const data = {
       title: 'Course & Department Settings',
       url: '#',
       items: [
-        { title: 'Manage Courses', url: '/superadmin/courses' },
-        { title: 'Manage Departments', url: '/superadmin/departments' },
+        { title: 'Courses & Departments', url: '/superadmin/courses' },
       ],
     },
     {

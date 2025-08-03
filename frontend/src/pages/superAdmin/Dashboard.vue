@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import ChartBar from '@/components/charts/ChartBar.vue'
-
-import SuperDashboardLayout from '@/components/layouts/SuperDashboardLayout.vue'
 import {
   Card,
   CardContent,
@@ -58,7 +56,7 @@ const chartOptions = {
 </script>
 
 <template>
-  <SuperDashboardLayout>
+
     <!-- Metrics Section -->
     <div class="grid gap-4 md:grid-cols-3">
       <Card class="shadow-sm">
@@ -105,6 +103,4 @@ const chartOptions = {
           </CardContent>
         </Card>
       </div>
-
-  </SuperDashboardLayout>
 </template>
