@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import SuperAdminSidebar from '../sidebar/SuperAdminSidebar.vue'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Bell, User } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 import {
   SidebarInset,
   SidebarProvider,
@@ -13,8 +19,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
 import {
   Avatar,
   AvatarFallback,
@@ -27,10 +31,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-import { Bell, User } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-
 const auth = useAuthStore()
+const route = useRoute()
+
+const breadcrumbs = computed(() => {
+  const matched = route.matched.filter(r => r.name) // skip anonymous routes
+
+  return matched.map(r => ({
+    name: r.meta?.breadcrumb || r.name,
+    path: r.path.startsWith('/') ? r.path : `/${r.path}`,
+  }))
+})
 
 function logout() {
   auth.logout()
@@ -49,12 +60,14 @@ function logout() {
           <Separator orientation="vertical" class="h-5" />
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem class="hidden md:block">
-                <BreadcrumbLink href="#">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator class="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Current Page</BreadcrumbPage>
+              <BreadcrumbItem v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+                <template v-if="index < breadcrumbs.length - 1">
+                  <BreadcrumbLink :href="crumb.path">{{ crumb.name }}</BreadcrumbLink>
+                  <BreadcrumbSeparator />
+                </template>
+                <template v-else>
+                  <BreadcrumbPage>{{ crumb.name }}</BreadcrumbPage>
+                </template>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

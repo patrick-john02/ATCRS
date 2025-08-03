@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import { onMounted } from 'vue'
+import { useSidebarStore } from '@/stores/sidebar'
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +18,12 @@ import {
 } from '@/components/ui/sidebar'
 
 const props = defineProps<SidebarProps>()
+const sidebarStore = useSidebarStore()
+const route = useRoute()
+
+onMounted(() => {
+  sidebarStore.initialize()
+})
 
 const data = {
   navMain: [
@@ -24,19 +33,11 @@ const data = {
       items: [],
     },
     {
-      title: 'Admin Management',
-      url: '#',
+      title: 'User Management',
+      url: '/superadmin/users',
       items: [
-        { title: 'All Admins', url: '/superadmin/admins' },
-        { title: 'Add New Admin', url: '/superadmin/admins/create' },
-      ],
-    },
-    {
-      title: 'User Overview',
-      url: '#',
-      items: [
-        { title: 'All Applicants', url: '/superadmin/applicants' },
-        { title: 'All Users', url: '/superadmin/users' },
+        { title: 'Admins', url: '/superadmin/admins' },
+        { title: 'Applicants', url: '/superadmin/applicants' },
       ],
     },
     {
@@ -99,15 +100,15 @@ const data = {
       <SidebarGroup>
         <SidebarMenu>
           <SidebarMenuItem v-for="item in data.navMain" :key="item.title">
-            <SidebarMenuButton as-child>
-              <a :href="item.url" class="font-medium">
+            <SidebarMenuButton v-if="item.url" as-child>
+              <RouterLink :to="item.url" class="font-medium">
                 {{ item.title }}
-              </a>
+              </RouterLink>
             </SidebarMenuButton>
             <SidebarMenuSub v-if="item.items.length">
               <SidebarMenuSubItem v-for="childItem in item.items" :key="childItem.title">
-                <SidebarMenuSubButton as-child :is-active="childItem.isActive">
-                  <a :href="childItem.url">{{ childItem.title }}</a>
+                <SidebarMenuSubButton as-child :is-active="route.path === childItem.url">
+                  <RouterLink :to="childItem.url">{{ childItem.title }}</RouterLink>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             </SidebarMenuSub>

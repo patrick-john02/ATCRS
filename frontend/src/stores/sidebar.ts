@@ -1,9 +1,8 @@
-// src/stores/sidebar.ts
 import { defineStore } from 'pinia'
 
 export const useSidebarStore = defineStore('sidebar', {
   state: () => ({
-    isOpen: true, // default: sidebar is open
+    isOpen: true,
   }),
   actions: {
     toggleSidebar() {
@@ -18,7 +17,6 @@ export const useSidebarStore = defineStore('sidebar', {
       this.isOpen = false
       this.persistState()
     },
-    // Persist state to localStorage
     persistState() {
       try {
         localStorage.setItem('sidebar-state', JSON.stringify({ isOpen: this.isOpen }))
@@ -26,7 +24,6 @@ export const useSidebarStore = defineStore('sidebar', {
         console.warn('Failed to persist sidebar state:', error)
       }
     },
-    // Load state from localStorage
     loadPersistedState() {
       try {
         const saved = localStorage.getItem('sidebar-state')
@@ -36,11 +33,9 @@ export const useSidebarStore = defineStore('sidebar', {
         }
       } catch (error) {
         console.warn('Failed to load persisted sidebar state:', error)
-        // Fallback to default state
         this.isOpen = true
       }
     },
-    // Initialize the store
     initialize() {
       this.loadPersistedState()
     }

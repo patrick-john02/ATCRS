@@ -51,33 +51,43 @@ const router = createRouter({
     },
 
     // Super Admin dashboard
-    {
-      path: '/superadmin',
-      component: () => import('@/components/layouts/SuperDashboardLayout.vue'),
-      meta: { requiresAuth: true, role: 'superadmin' },
-      children: [
-        {
-          path: 'dashboard',
-          name: 'SuperAdminDashboard',
-          component: () => import('@/pages/superAdmin/Dashboard.vue'),
-        },
-      ],
-    },
+{
+  path: '/superadmin',
+  component: () => import('@/pages/superAdmin/Dashboard.vue'),
+  meta: { requiresAuth: true, role: 'superadmin', breadcrumb: 'Super Admin' },
+  children: [
+    { path: 'dashboard', name: 'SuperAdminDashboard', component: () => import('@/pages/superAdmin/Dashboard.vue'), meta: { breadcrumb: 'Dashboard' } },
+
+    { path: 'users', name: 'SuperAdminUsers', component: () => import('@/pages/superAdmin/AllAdmins.vue'), meta: { breadcrumb: 'Users' } },
+    { path: 'admins', name: 'AllAdmins', component: () => import('@/pages/superAdmin/AllAdmins.vue'), meta: { breadcrumb: 'Admins' } },
+    { path: 'applicants', name: 'AllApplicants', component: () => import('@/pages/superAdmin/Applicants.vue'), meta: { breadcrumb: 'Applicants' } },
+
+    // { path: 'courses', name: 'Courses', component: () => import('@/pages/superAdmin/courses/Index.vue'), meta: { breadcrumb: 'Courses' } },
+    // { path: 'departments', name: 'Departments', component: () => import('@/pages/superAdmin/departments/Index.vue'), meta: { breadcrumb: 'Departments' } },
+
+    // { path: 'academic-years', name: 'AcademicYears', component: () => import('@/pages/superAdmin/academicYears/Index.vue'), meta: { breadcrumb: 'Academic Years' } },
+    // { path: 'terms', name: 'Terms', component: () => import('@/pages/superAdmin/terms/Index.vue'), meta: { breadcrumb: 'School Terms' } },
+
+    // { path: 'logs', name: 'AuditLogs', component: () => import('@/pages/superAdmin/logs/Index.vue'), meta: { breadcrumb: 'Audit Logs' } },
+    // { path: 'activity', name: 'ActivityReports', component: () => import('@/pages/superAdmin/activity/Index.vue'), meta: { breadcrumb: 'Activity Reports' } },
+
+    // { path: 'settings', name: 'Settings', component: () => import('@/pages/superAdmin/settings/Index.vue'), meta: { breadcrumb: 'Site Configuration' } },
+    // { path: 'backup', name: 'DatabaseBackup', component: () => import('@/pages/superAdmin/backup/Index.vue'), meta: { breadcrumb: 'Database Backup' } },
+  ],
+}
 
     // Unauthorized route
     // {
     //   path: '/error/Error401',
     //   name: 'Error401',
-    //   component: () => import('@/pages/error/Error401.vue'),
+    //   component: () => import('@/pages/error/Error.vue'),
     // },
   ],
 })
 
-// ✅ Navigation Guard for Authentication & Role-Based Access
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _, next) => {
   const auth = useAuthStore()
 
-  // Wait until the store is hydrated (if using SSR or persisted store)
   if (!auth.user && auth.accessToken) {
     try {
       await auth.fetchUser()
@@ -102,5 +112,4 @@ router.beforeEach(async (to, from, next) => {
 
   return next()
 })
-
 export default router
