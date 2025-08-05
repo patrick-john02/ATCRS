@@ -19,6 +19,10 @@ from api.services.admin_services import (
 from api.services.super_admin_services import (
     AdminUserViewSet
 )
+from api.services.applicant_services import(
+    UpcomingExamView,
+    RecentExamScoresView
+)
 router = DefaultRouter()
 
 router.register(r'register', RegistrationView, basename='registration') 
@@ -38,7 +42,8 @@ router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
 
 
 #applicants side
-# router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
+router.register(r'exams/upcoming', UpcomingExamView, basename='upcoming-exam')
+path('recent-exam-scores/', RecentExamScoresView.as_view(), name='recent-exam-scores'),
 
 
 urlpatterns = [

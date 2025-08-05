@@ -79,6 +79,39 @@ class CourseSerializers(serializers.ModelSerializer):
         model = Course
         fields = '__all__'
 
+class UpcomingExamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Exam
+        fields = [
+            'uuid',
+            'title',
+            'description',
+            'date',
+            'start_time',
+            'end_time',
+            'duration_minutes',
+            'access_code',
+            'max_attempts',
+        ]
+
+class RecentApplicantExamSerializer(serializers.ModelSerializer):
+    exam_title = serializers.CharField(source='exam.title')
+    exam_date = serializers.DateField(source='exam.date')
+
+    class Meta:
+        model = ApplicantExam
+        fields = [
+            'uuid',
+            'exam_title',
+            'exam_date',
+            'score',
+            'recommendation_score',
+            'status',
+            'accuracy',
+            'exam_attempt_number',
+            'created_at',
+        ]
+
 class UserSerializers(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
