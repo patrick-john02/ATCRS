@@ -51,6 +51,7 @@ const accordionItems = [
         </Button>
       </div>
     </nav>
+    
 
     <!-- Hero Section -->
     <section class="text-center mt-24 px-4">

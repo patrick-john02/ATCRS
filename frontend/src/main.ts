@@ -3,6 +3,7 @@ import './style.css'
 import App from './App.vue'
 import router from '@/router/index'
 // import pinia from '@/stores/index'
+
 import pinia from '@/stores'
 import { useSidebarStore } from '@/stores/sidebar'
 

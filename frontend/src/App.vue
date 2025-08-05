@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSidebarStore } from '@/stores/sidebar'
+import Sonner from './components/ui/sonner/Sonner.vue'
 
 const sidebarStore = useSidebarStore()
 sidebarStore.initialize()
@@ -9,6 +10,8 @@ sidebarStore.initialize()
 <template>
   <div>
       <RouterView/>
+      <Sonner position="bottom-right" />
+      
   </div>
 </template>
 

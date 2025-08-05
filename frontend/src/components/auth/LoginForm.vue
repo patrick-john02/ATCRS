@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from "vue-sonner"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -24,13 +25,19 @@ const { value: password } = useField<string>('password')
 const onSubmit = handleSubmit(async (values) => {
   try {
     await auth.login(values.username, values.password)
-    redirectUser() 
-    console.log('Login successful')
-  } catch (error) {
+    toast.success('Login successful! Redirecting...')
+    redirectUser()
+  } catch (error: any) {
     console.error('Login failed', error)
-    // optionally show toast or error feedback
+
+    if (error.response && error.response.status === 401) {
+      toast.error('Invalid username or password')
+    } else {
+      toast.error('Something went wrong. Please try again later.')
+    }
   }
 })
+
 </script>
 
 <template>
@@ -82,6 +89,9 @@ const onSubmit = handleSubmit(async (values) => {
             </div>
 
             <Button type="submit" class="w-full">Login</Button>
+
+            
+
 
             <div class="text-center text-sm">
               Don’t have an account?
