@@ -37,6 +37,8 @@ router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-a
 router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
 
 
+#applicants side
+# router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
 
 
 urlpatterns = [
