@@ -61,8 +61,8 @@ const chartOptions = {
     <div class="grid gap-4 md:grid-cols-3">
       <Card class="shadow-sm">
         <CardHeader>
-          <CardTitle>Total Admins</CardTitle>
-          <CardDescription>Number of admin accounts</CardDescription>
+          <CardTitle>Total Exams</CardTitle>
+          <CardDescription>Number of exams created</CardDescription>
         </CardHeader>
         <CardContent>
           <div class="text-4xl font-bold">12</div>

@@ -1,17 +1,20 @@
 from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.contrib.auth.models import User
 
 #permissions 
 from rest_framework.permissions import IsAuthenticated, AllowAny
+#permissions
 from api.permissions import(
     IsAdmin,
     IsSuperAdmin,
     IsApplicant,
 )
-
-
 #models
-from api.models.admission import Course
+from api.models.admission import (
+    Course,
+)
 from api.models.auth import ApplicantProfile
 from api.models.exam import (
     Exam,
@@ -32,6 +35,10 @@ from api.serializers.AdmissionSerializer import (
     ApplicantExamSerializer,
     ApplicantAnswerSerializer,
     
+)
+
+from api.serializers.SuperAdminUserSerializer import(
+    SuperAdminUserSerializer
 )
 
 class ChoiceView(viewsets.ModelViewSet):
@@ -68,4 +75,17 @@ class CoursesView(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializers
     permission_classes = [AllowAny]
+
+
+#DASHBOARD
+class AdminDashboardView(APIView):
+    permission_classes = [AllowAny]
     
+    def get(self, requests, *args, **kwargs):
+        exams_count = Exam.objects.all().count()
+        applicants_count = ApplicantProfile.objects.filter(user_type = 'applicants').count()
+        course_count = Course.objects.all().count()
+        return Response({'applicants_count': applicants_count, 
+                         'course_count': course_count,
+                         'exams_count' : exams_count
+                         })

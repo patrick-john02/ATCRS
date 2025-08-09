@@ -6,6 +6,8 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 from api.views import RegistrationView, CurrentUserView
+
+#admin
 from api.services.admin_services import (
     CoursesView,
     UsersView,
@@ -14,13 +16,15 @@ from api.services.admin_services import (
     ChoiceView,
     ApplicantExamView,
     ApplicantAnswerView,
+    AdminDashboardView,
 )
-
+#super admin
 from api.services.super_admin_services import (
-    AdminUserViewSet,
-    AdminApplicantsViewSet,
-    AdminManageCourses,
+    SuperAdminUserViewSet,
+    SuperAdminApplicantsViewSet,
+    SuperAdminManageCourses,
 )
+#applicants
 from api.services.applicant_services import(
     UpcomingExamView,
     RecentExamScoresView
@@ -40,9 +44,9 @@ router.register(r'applicant-exam', ApplicantExamView, basename='applicant-exam')
 router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-answers')
 
 #super admin side
-router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
-router.register(r'applicants', AdminApplicantsViewSet, basename='applicants')
-router.register(r'superadmin-manage-courses', AdminManageCourses, basename='superadmin-courses')
+router.register(r'admin-users', SuperAdminUserViewSet, basename='admin-users')
+router.register(r'applicants', SuperAdminApplicantsViewSet, basename='applicants')
+router.register(r'superadmin-manage-courses', SuperAdminManageCourses, basename='superadmin-courses')
 
 
 #applicants side
@@ -55,6 +59,9 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('users/me/', CurrentUserView.as_view(), name='user-detail'),
+    
+    #admin
+    path('admin-dashboard/', AdminDashboardView.as_view(), name = 'dashboard_admin_count'),
     
     path('', include(router.urls)),
 ]

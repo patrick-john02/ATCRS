@@ -36,9 +36,9 @@ const navMain = [
     title: 'Applicant Management',
     url: null,
     items: [
-      { title: 'All Applicants', url: '/admin/applicants' },
-      { title: 'Pending Applications', url: '/admin/applicants/pending' },
-      { title: 'Verified Applicants', url: '/admin/applicants/verified' },
+      { title: 'Applicants', url: '/admin/applicants' },
+      // { title: 'Pending Applications', url: '/admin/applicants/pending' },
+      // { title: 'Verified Applicants', url: '/admin/applicants/verified' },
     ],
   },
   {

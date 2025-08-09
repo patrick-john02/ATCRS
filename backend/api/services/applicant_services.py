@@ -9,6 +9,8 @@ from api.serializers.AdmissionSerializer import(
     RecentApplicantExamSerializer
 )
 
+    
+
 class UpcomingExamView(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 

@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-from api.models.admission import Course
+
 from api.models.auth import ApplicantProfile
 import uuid
 

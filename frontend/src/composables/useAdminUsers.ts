@@ -28,8 +28,8 @@ export function useAdminUsers() {
   password: string
 }) => {
   try {
-    const res = await api.post('/api/admin-users/', data)
-    await fetchAdmins() // Refresh list
+    const res = await api.post('/admin-users/', data)
+    await fetchAdmins()
     return res.data
   } catch (err) {
     error.value = 'Failed to create admin'
@@ -39,7 +39,7 @@ export function useAdminUsers() {
 
 const updateAdminUser = async (id: number, data: Partial<AdminUser>) => {
   try {
-    await api.patch(`/api/admin-users/${id}/`, data)
+    await api.patch(`/admin-users/${id}/`, data)
     await fetchAdmins()
   } catch (err) {
     error.value = 'Failed to update admin'
@@ -49,15 +49,13 @@ const updateAdminUser = async (id: number, data: Partial<AdminUser>) => {
 
 const deleteAdminUser = async (id: number) => {
   try {
-    await api.delete(`/api/admin-users/${id}/`)
+    await api.delete(`/admin-users/${id}/`)
     admins.value = admins.value.filter(admin => admin.id !== id)
   } catch (err) {
     error.value = 'Failed to delete admin'
     throw err
   }
 }
-
-
 
   return { 
     admins,

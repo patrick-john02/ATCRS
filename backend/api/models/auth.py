@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from api.models.admission import Course
 
-
-
 USER_TYPE_CHOICES = [
     ('superadmin', 'Super Admin'),
     ('admin', 'Admin'),
@@ -33,7 +31,7 @@ class ApplicantProfile(models.Model):
     user_type = models.CharField(
         max_length=20, choices=USER_TYPE_CHOICES, default='applicant'
     )
-
+    date_of_examination = models.ForeignKey(exam.Exam, on_delete = models.CASCADE, null = True)
     birthdate = models.DateField(null=True, blank=True)
     contact_number = models.CharField(max_length=15, blank=True)
     address = models.TextField(blank=True)
@@ -41,6 +39,7 @@ class ApplicantProfile(models.Model):
     year_graduated = models.PositiveIntegerField(null=True, blank=True)
     course_applied = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
     profile_photo = models.ImageField(upload_to='applicant_photos/', blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)  
     updated_at = models.DateTimeField(auto_now=True)
 
