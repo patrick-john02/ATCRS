@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { Bell, User } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
+import { useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
 import AdminSidebar from '../sidebar/AdminSidebar.vue'
 import {
   SidebarInset,
@@ -27,10 +31,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-import { Bell, User } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-
 const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+
+const breadcrumbs = computed(() => {
+  return route.matched
+    .filter(r => r.name)
+    .map(r => {
+      const name = typeof r.meta?.breadcrumb === 'string'
+        ? r.meta.breadcrumb
+        : String(r.name)
+
+      return {
+        name,
+        path: router.resolve({ name: r.name as string }).href // always full URL
+      }
+    })
+})
+
 
 function logout() {
   auth.logout()
@@ -49,12 +68,14 @@ function logout() {
           <Separator orientation="vertical" class="h-5" />
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem class="hidden md:block">
-                <BreadcrumbLink href="#">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator class="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Current Page</BreadcrumbPage>
+              <BreadcrumbItem v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+                <template v-if="index < breadcrumbs.length - 1">
+                  <BreadcrumbLink :href="crumb.path">{{ crumb.name }}</BreadcrumbLink>
+                  <BreadcrumbSeparator />
+                </template>
+                <template v-else>
+                  <BreadcrumbPage>{{ crumb.name }}</BreadcrumbPage>
+                </template>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -79,7 +100,9 @@ function logout() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-40">
               <DropdownMenuItem>
+                <RouterLink to="/admin/profile">
                 <User class="mr-2 h-4 w-4" /> Profile
+                </RouterLink>
               </DropdownMenuItem>
               <DropdownMenuItem @click="logout">
                 <span class="text-red-500">Logout</span>
@@ -91,6 +114,7 @@ function logout() {
 
       <main class="flex-1 p-4">
         <slot />
+        <router-view />
       </main>
     </SidebarInset>
   </SidebarProvider>

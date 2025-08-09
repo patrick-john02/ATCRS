@@ -17,7 +17,9 @@ from api.services.admin_services import (
 )
 
 from api.services.super_admin_services import (
-    AdminUserViewSet
+    AdminUserViewSet,
+    AdminApplicantsViewSet,
+    AdminManageCourses,
 )
 from api.services.applicant_services import(
     UpcomingExamView,
@@ -28,7 +30,7 @@ router = DefaultRouter()
 router.register(r'register', RegistrationView, basename='registration') 
 
 #admin side
-router.register(r'courses', CoursesView, basename='courses')
+router.register(r'admin-manage-courses', CoursesView, basename='admin-courses')
 router.register(r'users', UsersView, basename='users')
 
 router.register(r'choices', ChoiceView, basename='choices')
@@ -39,6 +41,8 @@ router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-a
 
 #super admin side
 router.register(r'admin-users', AdminUserViewSet, basename='admin-users')
+router.register(r'applicants', AdminApplicantsViewSet, basename='applicants')
+router.register(r'superadmin-manage-courses', AdminManageCourses, basename='superadmin-courses')
 
 
 #applicants side
@@ -49,7 +53,7 @@ path('recent-exam-scores/', RecentExamScoresView.as_view(), name='recent-exam-sc
 urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('users/me/', CurrentUserView.as_view(), name='user-detail'),
     
     path('', include(router.urls)),

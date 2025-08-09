@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Bell, User } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
 import {
   SidebarInset,
@@ -33,15 +33,23 @@ import {
 
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 
 const breadcrumbs = computed(() => {
-  const matched = route.matched.filter(r => r.name) // skip anonymous routes
+  return route.matched
+    .filter(r => r.name)
+    .map(r => {
+      const name = typeof r.meta?.breadcrumb === 'string'
+        ? r.meta.breadcrumb
+        : String(r.name)
 
-  return matched.map(r => ({
-    name: r.meta?.breadcrumb || r.name,
-    path: r.path.startsWith('/') ? r.path : `/${r.path}`,
-  }))
+      return {
+        name,
+        path: router.resolve({ name: r.name as string }).href
+      }
+    })
 })
+
 
 function logout() {
   auth.logout()

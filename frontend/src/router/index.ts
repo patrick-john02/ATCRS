@@ -31,24 +31,161 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'AdminDashboard',
+          meta: { breadcrumb: 'Admin Dashboard' },
           component: () => import('@/pages/admin/Dashboard.vue'),
         },
-      ],
-    },
-
-    // Student dashboard
-    {
-      path: '/student',
-      component: () => import('@/components/layouts/StudentDashboardLayout.vue'),
-      meta: { requiresAuth: true, role: 'applicant' },
-      children: [
         {
-          path: 'dashboard',
-          name: 'StudentDashboard',
-          component: () => import('@/pages/student/Dashboard.vue'),
+          path: 'applicants',
+          name: 'AdminAllApplicant',
+          meta: { breadcrumb: 'Manage All Applicant' },
+          component: () => import('@/pages/admin/AllApplicant.vue'),
+        },
+        {
+          path: 'applicants/pending',
+          name: 'AdminPendingApplicants',
+          meta: { breadcrumb: 'Manage Pending Applicants' },
+          component: () => import('@/pages/admin/PendingApplicants.vue'),
+        },
+        {
+          path: 'applicants/verified',
+          name: 'AdminVerifiedApplicants',
+          meta: { breadcrumb: 'Manage Verified Applicants' },
+          component: () => import('@/pages/admin/VerifiedApplicants.vue'),
+        },
+        {
+          path: '/admin/exams',
+          name: 'AdminManageExams',
+          meta: { breadcrumb: 'Manage Exams' },
+          component: () => import('@/pages/admin/ManageExams.vue'),
+        },
+        {
+          path: '/admin/results',
+          name: 'AdminViewResults',
+          meta: { breadcrumb: 'View Results' },
+          component: () => import('@/pages/admin/ViewResults.vue'),
+        },
+        {
+          path: '/admin/results/passed',
+          name: 'AdminPassedApplicants',
+          meta: { breadcrumb: 'Passed Applicants' },
+          component: () => import('@/pages/admin/PassedApplicants.vue'),
+        },
+        {
+          path: '/admin/results/failed',
+          name: 'AdminFailedApplicants',
+          meta: { breadcrumb: 'Failed Applicants' },
+          component: () => import('@/pages/admin/FailedApplicants.vue'),
+        },
+        {
+          path: '/admin/courses',
+          name: 'AdminCourses',
+          meta: { breadcrumb: 'Manage Courses' },
+          component: () => import('@/pages/admin/Courses.vue'),
+        },
+        {
+          path: '/admin/courses/',
+          name: 'AdminCourses',
+          meta: { breadcrumb: 'Manage Courses' },
+          component: () => import('@/pages/admin/Courses.vue'),
+        },
+        {
+          path: '/admin/users/admins',
+          name: 'AdminManageAdmin',
+          meta: { breadcrumb: 'Manage Admins' },
+          component: () => import('@/pages/admin/ManageAdmin.vue'),
+        },
+        {
+          path: '/admin/users/students',
+          name: 'AdminManageStudents',
+          meta: { breadcrumb: 'Manage Students' },
+          component: () => import('@/pages/admin/ManageStudents.vue'),
+        },
+        {
+          path: '/admin/announcements/create',
+          name: 'AdminManageAnnouncements',
+          meta: { breadcrumb: 'Manage Announcements' },
+          component: () => import('@/pages/admin/ManageLandingPage.vue'),
+        },
+
+        {
+          path: '/admin/profile',
+          name: 'AdminProfile',
+          meta: { breadcrumb: 'Profile' },
+          component: () => import('@/pages/admin/Profile.vue'),
         },
       ],
     },
+//student
+{
+  path: '/student',
+  component: () => import('@/components/layouts/StudentDashboardLayout.vue'),
+  meta: { requiresAuth: true, role: 'applicant' },
+  children: [
+    // Dashboard
+    {
+      path: 'dashboard',
+      name: 'StudentDashboard',
+      meta: { breadcrumb: 'Student Dashboard' },
+      component: () => import('@/pages/student/Dashboard.vue'),
+    },
+
+    // Admission
+    {
+      path: 'admission/apply',
+      name: 'AdmissionApply',
+      meta: { breadcrumb: 'Apply for Admission' },
+      component: () => import('@/pages/student/Apply.vue'),
+    },
+    {
+      path: 'admission/status',
+      name: 'AdmissionStatus',
+      meta: { breadcrumb: 'Admission Status' },
+      component: () => import('@/pages/student/Status.vue'),
+    },
+    {
+      path: 'admission/requirements',
+      name: 'AdmissionRequirements',
+      meta: { breadcrumb: 'Upload Requirements' },
+      component: () => import('@/pages/student/Requirements.vue'),
+    },
+
+    // Online Examination
+    {
+      path: 'exam/instructions',
+      name: 'ExamInstructions',
+      meta: { breadcrumb: 'Exam Instructions' },
+      component: () => import('@/pages/student/Instructions.vue'),
+    },
+    {
+      path: 'exam/start',
+      name: 'TakeExam',
+      meta: { breadcrumb: 'Take Exam' },
+      component: () => import('@/pages/student/Start.vue'),
+    },
+    {
+      path: 'exam/history',
+      name: 'ExamHistory',
+      meta: { breadcrumb: 'Exam History' },
+      component: () => import('@/pages/student/History.vue'),
+    },
+
+    // Results
+    {
+      path: 'results/scores',
+      name: 'ViewScores',
+      meta: { breadcrumb: 'View Scores' },
+      component: () => import('@/pages/student/Scores.vue'),
+    },
+    {
+      path: 'results/download',
+      name: 'DownloadResult',
+      meta: { breadcrumb: 'Download Result' },
+      component: () => import('@/pages/student/Download.vue'),
+    },
+
+   
+  ],
+},
 
     // Super Admin dashboard
 {

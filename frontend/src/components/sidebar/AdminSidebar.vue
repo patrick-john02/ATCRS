@@ -45,8 +45,8 @@ const navMain = [
     title: 'Exam Management',
     url: null,
     items: [
-      { title: 'Question Bank', url: '/admin/exams/questions' },
-      { title: 'Create Exam', url: '/admin/exams/create' },
+      // { title: 'Question Bank', url: '/admin/exams/questions' },
+      // { title: 'Create Exam', url: '/admin/exams/create' },
       { title: 'Manage Exams', url: '/admin/exams' },
     ],
   },
@@ -63,8 +63,8 @@ const navMain = [
     title: 'Course Management',
     url: null,
     items: [
-      { title: 'List of Courses', url: '/admin/courses' },
-      { title: 'Add Course', url: '/admin/courses/create' },
+      { title: 'Manage Courses', url: '/admin/courses' },
+      // { title: 'Add Course', url: '/admin/courses/create' },
     ],
   },
   {
@@ -83,14 +83,7 @@ const navMain = [
       { title: 'Manage Announcements', url: '/admin/announcements' },
     ],
   },
-  {
-    title: 'System Settings',
-    url: null,
-    items: [
-      { title: 'Audit Logs', url: '/admin/settings/logs' },
-      { title: 'Site Configuration', url: '/admin/settings/config' },
-    ],
-  },
+
 ]
 </script>
 

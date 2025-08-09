@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +14,7 @@ import {
   type SidebarProps,
   SidebarRail,
 } from '@/components/ui/sidebar'
+const route = useRoute()
 
 const props = defineProps<SidebarProps>()
 
@@ -20,50 +22,38 @@ const data = {
   navMain: [
     {
       title: 'Dashboard',
-      url: '/dashboard',
+      url: '/student/dashboard',
       items: [],
     },
     {
       title: 'Admission',
       url: '#',
       items: [
-        { title: 'Apply for Admission', url: '/admission/apply' },
-        { title: 'Admission Status', url: '/admission/status' },
-        { title: 'Upload Requirements', url: '/admission/requirements' },
+        { title: 'Apply for Admission', url: '/student/admission/apply' },
+        { title: 'Admission Status', url: '/student/admission/status' },
+        { title: 'Upload Requirements', url: '/student/admission/requirements' },
       ],
     },
     {
       title: 'Online Examination',
       url: '#',
       items: [
-        { title: 'Exam Instructions', url: '/exam/instructions' },
-        { title: 'Take Exam', url: '/exam/start' },
-        { title: 'Exam History', url: '/exam/history' },
+        { title: 'Exam Instructions', url: '/student/exam/instructions' },
+        { title: 'Take Exam', url: '/student/exam/start' },
+        { title: 'Exam History', url: '/student/exam/history' },
       ],
     },
     {
       title: 'Results',
       url: '#',
       items: [
-        { title: 'View Scores', url: '/results/scores' },
-        { title: 'Download Result', url: '/results/download' },
-      ],
-    },
-    {
-      title: 'Announcements',
-      url: '/announcements',
-      items: [],
-    },
-    {
-      title: 'Support',
-      url: '#',
-      items: [
-        { title: 'FAQs', url: '/support/faqs' },
-        { title: 'Contact Admin', url: '/support/contact' },
+        { title: 'View Scores', url: '/student/results/scores' },
+        { title: 'Download Result', url: '/student/results/download' },
       ],
     },
   ],
 }
+
 </script>
 
 
@@ -91,14 +81,16 @@ const data = {
         <SidebarMenu>
           <SidebarMenuItem v-for="item in data.navMain" :key="item.title">
             <SidebarMenuButton as-child>
+              <RouterLink :to="item.url" class="font-medium">
               <a :href="item.url" class="font-medium">
                 {{ item.title }}
               </a>
+              </RouterLink>
             </SidebarMenuButton>
             <SidebarMenuSub v-if="item.items.length">
               <SidebarMenuSubItem v-for="childItem in item.items" :key="childItem.title">
-                <SidebarMenuSubButton as-child :is-active="childItem.isActive">
-                  <a :href="childItem.url">{{ childItem.title }}</a>
+                <SidebarMenuSubButton as-child :is-active="route.path === childItem.url">
+                  <RouterLink :to="childItem.url">{{ childItem.title }}</RouterLink>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             </SidebarMenuSub>
