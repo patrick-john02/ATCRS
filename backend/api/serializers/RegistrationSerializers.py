@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from api.models.auth import ApplicantProfile, Course
+from api.models.auth import ApplicantProfile
+from api.models.admission import Course
 from django.contrib.auth.models import User
 
 class RegisterSerializer(serializers.Serializer):
