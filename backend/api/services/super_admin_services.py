@@ -2,7 +2,10 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from api.models.auth import ApplicantProfile
 from api.permissions import IsAdmin, IsSuperAdmin
-from api.serializers.SuperAdminUserSerializer import SuperAdminUserSerializer
+from api.serializers.SuperAdminUserSerializer import (
+    SuperAdminUserSerializer,
+    SuperAdminUserCreateSerializer,
+)
 from api.models.admission import (
     Course
 )
@@ -10,13 +13,13 @@ from api.serializers.SuperAdminUserSerializer import CourseSerializers
 
 
 class SuperAdminUserViewSet(viewsets.ModelViewSet):
-    serializer_class = SuperAdminUserSerializer
+    queryset = ApplicantProfile.objects.filter(user_type="admin")
     permission_classes = [AllowAny]
-    
 
-
-    def get_queryset(self):
-        return ApplicantProfile.objects.filter(user_type='admin')
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return SuperAdminUserCreateSerializer
+        return SuperAdminUserSerializer
 
 class SuperAdminApplicantsViewSet(viewsets.ModelViewSet):
     serializer_class = SuperAdminUserSerializer
@@ -24,7 +27,7 @@ class SuperAdminApplicantsViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAdmin, IsSuperAdmin, IsAuthenticated ]
     
     def get_queryset(self):
-        queryset = ApplicantProfile.objects.filter(user_type = 'applicants').order_by('created_at')
+        queryset = ApplicantProfile.objects.filter(user_type = 'applicant').order_by('created_at')
         
         is_verified_param = self.request.query_params.get('is_verified')
         if is_verified_param is not None:

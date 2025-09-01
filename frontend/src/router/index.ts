@@ -58,6 +58,14 @@ const router = createRouter({
           meta: { breadcrumb: 'Manage Exams' },
           component: () => import('@/pages/admin/ManageExams.vue'),
         },
+
+        {
+          path: '/admin/manage/exams/:id',
+          name: 'AdminViewManageExams',
+          meta: { breadcrumb: 'View Manage Exams' },
+          component: () => import('@/pages/admin/ManageExamsView.vue'),
+        },
+
         {
           path: '/admin/results',
           name: 'AdminViewResults',

@@ -1,44 +1,39 @@
 import { defineStore } from "pinia";
-import api from '@/utils/axios';
-// import axios from 'axios';
+import axios from "axios"; // <-- raw axios, not api
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: () => ({
-    accessToken: '',
-    refreshToken: '',
+    accessToken: "",
+    refreshToken: "",
     user: null as Record<string, any> | null,
   }),
 
   actions: {
     async login(username: string, password: string) {
-      try {
-        const response = await api.post('/token/', {
-          username,
-          password,
-        });
+      const response = await axios.post("http://127.0.0.1:8000/api/token/", {
+        username,
+        password,
+      });
 
-        const { access, refresh } = response.data;
-        this.accessToken = access;
-        this.refreshToken = refresh;
+      const { access, refresh } = response.data;
+      this.accessToken = access;
+      this.refreshToken = refresh;
 
-        await this.fetchUser();
-      } catch (error) {
-        console.error(error);
-        throw new Error('Login failed');
-      }
+      await this.fetchUser();
     },
 
     async fetchUser() {
-      const res = await api.get('/users/me/');
+      const api = (await import("@/utils/axios")).default; // lazy import api
+      const res = await api.get("/users/me/");
       this.user = res.data;
     },
 
     logout() {
-      this.accessToken = '';
-      this.refreshToken = '';
+      this.accessToken = "";
+      this.refreshToken = "";
       this.user = null;
-    }
+    },
   },
 
-  persist: true
+  persist: true,
 });

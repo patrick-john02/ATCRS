@@ -55,6 +55,7 @@ class ExamView(viewsets.ModelViewSet):
     queryset = Exam.objects.all()
     serializer_class = ExamSerializer
     permission_classes = [AllowAny]
+    lookup_field = 'uuid'
 
 class ApplicantExamView(viewsets.ModelViewSet):
     queryset = ApplicantExam.objects.all()

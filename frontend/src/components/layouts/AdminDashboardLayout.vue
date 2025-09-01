@@ -3,6 +3,7 @@ import { Bell, User } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
+import { Toaster } from "vue-sonner"
 import AdminSidebar from '../sidebar/AdminSidebar.vue'
 import {
   SidebarInset,
@@ -117,5 +118,6 @@ function logout() {
         <router-view />
       </main>
     </SidebarInset>
+    <Toaster richColors position="top-right" />
   </SidebarProvider>
 </template>
