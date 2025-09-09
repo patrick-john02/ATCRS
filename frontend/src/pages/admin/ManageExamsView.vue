@@ -16,8 +16,25 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
+
+// Icons
+import { Calendar, Clock, Users, FileText, Settings, Trash2, Plus, Eye } from "lucide-vue-next"
 
 // Store + Router
 const examStore = useExamsStore()
@@ -26,21 +43,28 @@ const router = useRouter()
 
 const examId = computed(() => route.params.id as string)
 
-// Dialog state
+// Dialog states
 const isEditDialogOpen = ref(false)
+const isDeleteDialogOpen = ref(false)
 
 // Editable exam fields
 const editTitle = ref("")
 const editDescription = ref("")
+const editDate = ref("")
+const editStartTime = ref("")
+const editEndTime = ref("")
+const editDurationMinutes = ref(0)
+const editAccessCode = ref("")
+const editIsActive = ref(false)
 
 // Load exam
 onMounted(async () => {
   if (examId.value) {
-    await examStore.loadExamById(examId.value)
-
-    if (examStore.currentExam) {
-      editTitle.value = examStore.currentExam.title
-      editDescription.value = examStore.currentExam.description
+    try {
+      await examStore.loadExamById(examId.value)
+      populateEditForm()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load exam")
     }
   }
 })
@@ -49,13 +73,41 @@ const exam = computed(() => examStore.currentExam)
 const loading = computed(() => examStore.loading)
 const error = computed(() => examStore.error)
 
+// Populate edit form with current exam data
+const populateEditForm = () => {
+  if (examStore.currentExam) {
+    const e = examStore.currentExam
+    editTitle.value = e.title
+    editDescription.value = e.description
+    editDate.value = e.date
+    editStartTime.value = e.start_time
+    editEndTime.value = e.end_time
+    editDurationMinutes.value = e.duration_minutes
+    editAccessCode.value = e.access_code
+    editIsActive.value = e.is_active
+  }
+}
+
+// Open edit dialog
+const openEditDialog = () => {
+  populateEditForm()
+  isEditDialogOpen.value = true
+}
+
 // Save changes
 const handleSave = async () => {
   if (!exam.value) return
+  
   try {
     await examStore.updateExam(exam.value.uuid, {
       title: editTitle.value,
       description: editDescription.value,
+      date: editDate.value,
+      start_time: editStartTime.value,
+      end_time: editEndTime.value,
+      duration_minutes: editDurationMinutes.value,
+      access_code: editAccessCode.value,
+      is_active: editIsActive.value,
     })
     toast.success("Exam updated successfully")
     isEditDialogOpen.value = false
@@ -64,93 +116,334 @@ const handleSave = async () => {
   }
 }
 
+// Toggle exam status
+const handleToggleStatus = async () => {
+  if (!exam.value) return
+  
+  try {
+    await examStore.toggleExamStatus(exam.value.uuid)
+    toast.success(`Exam ${exam.value.is_active ? 'activated' : 'deactivated'} successfully`)
+  } catch (err: any) {
+    toast.error(err.message || "Failed to toggle exam status")
+  }
+}
+
 // Delete exam
 const handleDelete = async () => {
   if (!exam.value) return
-  if (confirm(`Are you sure you want to delete "${exam.value.title}"?`)) {
-    try {
-      await examStore.deleteExam(exam.value.uuid)
-      toast.success("Exam deleted successfully")
-      router.push({ name: "AdminManageExams" })
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete exam")
-    }
+  
+  try {
+    await examStore.deleteExam(exam.value.uuid)
+    toast.success("Exam deleted successfully")
+    router.push({ name: "AdminManageExams" })
+  } catch (err: any) {
+    toast.error(err.message || "Failed to delete exam")
   }
 }
+
+// Format date helper
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+// Format time helper
+const formatTime = (timeString: string) => {
+  return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+// Calculate exam stats
+const examStats = computed(() => {
+  if (!exam.value) return null
+  
+  const totalQuestions = exam.value.questions?.length || 0
+  const mcqQuestions = exam.value.questions?.filter(q => q.question_type === 'mcq').length || 0
+  const essayQuestions = exam.value.questions?.filter(q => q.question_type === 'essay').length || 0
+  
+  return {
+    totalQuestions,
+    mcqQuestions,
+    essayQuestions
+  }
+})
 </script>
 
 <template>
   <div class="p-6 space-y-6">
-    <!-- Loading -->
-    <div v-if="loading" class="text-gray-500">Loading exam details...</div>
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Exam Management</h1>
+        <p class="text-muted-foreground">
+          Manage exam details, questions, and settings
+        </p>
+      </div>
+      <Button @click="() => router.push({ name: 'AdminManageExams' })" variant="outline">
+        Back to Exams
+      </Button>
+    </div>
 
-    <!-- Error -->
-    <div v-else-if="error" class="text-red-600">{{ error }}</div>
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center py-12">
+      <div class="text-center space-y-3">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p class="text-muted-foreground">Loading exam details...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="text-center py-12">
+      <div class="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
+        <FileText class="h-6 w-6 text-red-600" />
+      </div>
+      <h3 class="mt-2 text-sm font-semibold text-gray-900">Error Loading Exam</h3>
+      <p class="mt-1 text-sm text-gray-500">{{ error }}</p>
+      <div class="mt-6">
+        <Button @click="() => router.push({ name: 'AdminManageExams' })" variant="outline">
+          Back to Exams
+        </Button>
+      </div>
+    </div>
 
     <!-- Exam Details -->
     <div v-else-if="exam" class="space-y-6">
       <!-- Exam Header -->
       <Card>
         <CardHeader>
-          <CardTitle class="text-2xl font-bold flex justify-between items-center">
-            {{ exam!.title }}
-            <Badge :variant="exam!.is_active ? 'default' : 'secondary'">
-              {{ exam!.is_active ? "Active" : "Inactive" }}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-2 text-gray-700">
-          <p>{{ exam.description }}</p>
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-            <p><strong>Date:</strong> {{ exam.date }}</p>
-            <p><strong>Time:</strong> {{ exam.start_time }} - {{ exam.end_time }}</p>
-            <p><strong>Duration:</strong> {{ exam.duration_minutes }} mins</p>
-            <p><strong>Access Code:</strong> {{ exam.access_code }}</p>
+          <div class="flex items-start justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-bold">{{ exam.title }}</h2>
+                <Badge :variant="exam.is_active ? 'default' : 'secondary'">
+                  {{ exam.is_active ? 'Active' : 'Inactive' }}
+                </Badge>
+              </div>
+              <p class="text-muted-foreground">{{ exam.description }}</p>
+              <p class="text-sm text-muted-foreground">
+                Created: {{ formatDate(exam.created_at) }}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <Button @click="openEditDialog" size="sm">
+                <Settings class="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button 
+                @click="handleToggleStatus" 
+                :variant="exam.is_active ? 'secondary' : 'default'"
+                size="sm"
+              >
+                {{ exam.is_active ? 'Deactivate' : 'Activate' }}
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger as-child>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 class="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Exam</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{{ exam.title }}"? This action cannot be undone and will remove all associated questions and answers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction @click="handleDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete Exam
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
-          <div class="flex gap-2 mt-4">
-            <Button @click="isEditDialogOpen = true">Edit Exam</Button>
-            <Button variant="destructive" @click="handleDelete">Delete Exam</Button>
+        </CardHeader>
+      </Card>
+
+      <!-- Exam Information Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Schedule Card -->
+        <Card>
+          <CardContent class="pt-6">
+            <div class="flex items-center space-x-2">
+              <Calendar class="h-5 w-5 text-blue-500" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium leading-none">Schedule</p>
+                <p class="text-sm text-muted-foreground">
+                  {{ formatDate(exam.date) }}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Time Card -->
+        <Card>
+          <CardContent class="pt-6">
+            <div class="flex items-center space-x-2">
+              <Clock class="h-5 w-5 text-green-500" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium leading-none">Time</p>
+                <p class="text-sm text-muted-foreground">
+                  {{ formatTime(exam.start_time) }} - {{ formatTime(exam.end_time) }}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Duration Card -->
+        <Card>
+          <CardContent class="pt-6">
+            <div class="flex items-center space-x-2">
+              <Clock class="h-5 w-5 text-orange-500" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium leading-none">Duration</p>
+                <p class="text-sm text-muted-foreground">
+                  {{ exam.duration_minutes }} minutes
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Questions Card -->
+        <Card>
+          <CardContent class="pt-6">
+            <div class="flex items-center space-x-2">
+              <FileText class="h-5 w-5 text-purple-500" />
+              <div class="space-y-1">
+                <p class="text-sm font-medium leading-none">Questions</p>
+                <p class="text-sm text-muted-foreground">
+                  {{ examStats?.totalQuestions || 0 }} total
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Exam Details -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Exam Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div>
+                <Label class="text-sm font-medium text-muted-foreground">Access Code</Label>
+                <p class="font-mono text-lg font-semibold">{{ exam.access_code }}</p>
+              </div>
+              <div>
+                <Label class="text-sm font-medium text-muted-foreground">Status</Label>
+                <p>
+                  <Badge :variant="exam.is_active ? 'default' : 'secondary'">
+                    {{ exam.is_active ? 'Active - Students can access' : 'Inactive - Hidden from students' }}
+                  </Badge>
+                </p>
+              </div>
+            </div>
+            <div class="space-y-4" v-if="examStats">
+              <div>
+                <Label class="text-sm font-medium text-muted-foreground">Question Breakdown</Label>
+                <div class="space-y-1">
+                  <p class="text-sm">Multiple Choice: {{ examStats.mcqQuestions }}</p>
+                  <p class="text-sm">Essay Questions: {{ examStats.essayQuestions }}</p>
+                  <p class="text-sm font-semibold">Total: {{ examStats.totalQuestions }}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       <!-- Questions Section -->
       <Card>
-        <CardHeader>
-          <CardTitle class="text-xl font-semibold">Questions</CardTitle>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div class="space-y-1">
+            <CardTitle class="text-xl">Questions</CardTitle>
+            <p class="text-sm text-muted-foreground">
+              Manage exam questions and their choices
+            </p>
+          </div>
+          <Button size="sm" @click="() => router.push({ name: 'AddQuestion', params: { examId: exam.uuid } })">
+            <Plus class="w-4 h-4 mr-2" />
+            Add Question
+          </Button>
         </CardHeader>
         <CardContent>
-          <ul v-if="exam.questions?.length" class="space-y-4">
-            <li
-              v-for="q in exam.questions"
-              :key="q.uuid"
-              class="p-4 border rounded-lg bg-white shadow-sm"
+          <div v-if="exam.questions && exam.questions.length > 0" class="space-y-4">
+            <div
+              v-for="(question, index) in exam.questions"
+              :key="question.uuid"
+              class="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
             >
-              <p class="font-medium text-gray-900 mb-2">
-                {{ q.text }}
-                <Badge class="ml-2" variant="outline">{{ q.question_type.toUpperCase() }}</Badge>
-              </p>
+              <div class="flex items-start justify-between">
+                <div class="flex-1 space-y-2">
+                  <div class="flex items-center gap-2">
+                    <Badge variant="outline">{{ index + 1 }}</Badge>
+                    <Badge :variant="question.question_type === 'mcq' ? 'default' : 'secondary'">
+                      {{ question.question_type.toUpperCase() }}
+                    </Badge>
+                  </div>
+                  <p class="font-medium">{{ question.text }}</p>
+                  
+                  <!-- Choices for MCQ -->
+                  <div v-if="question.choices && question.choices.length > 0" class="ml-6 space-y-2">
+                    <p class="text-sm font-medium text-muted-foreground">Choices:</p>
+                    <div class="grid grid-cols-1 gap-1">
+                      <div
+                        v-for="choice in question.choices"
+                        :key="choice.uuid"
+                        class="flex items-center gap-2 text-sm"
+                      >
+                        <span class="font-medium min-w-[20px]">{{ choice.label }}.</span>
+                        <span class="flex-1">{{ choice.text }}</span>
+                        <Badge v-if="choice.is_correct" variant="default" class="ml-auto">
+                          Correct
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 ml-4">
+                  <Button size="sm" variant="outline">
+                    <Eye class="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="destructive">
+                    <Trash2 class="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-              <!-- Choices -->
-              <ul class="ml-6 list-disc text-gray-700 space-y-1">
-                <li
-                  v-for="c in q.choices"
-                  :key="c.uuid"
-                  :class="c.is_correct ? 'font-semibold text-green-600' : ''"
-                >
-                  {{ c.label }}. {{ c.text }}
-                  <span v-if="c.is_correct" class="ml-1">(Correct)</span>
-                </li>
-              </ul>
-            </li>
-          </ul>
-
-          <p v-else class="text-gray-500">No questions added yet.</p>
-
-          <div class="mt-4">
-            <Button size="sm" @click="() => router.push({ name: 'AddQuestion', params: { examId: exam!.uuid } })">
-              Add Question
-            </Button>
+          <!-- No Questions State -->
+          <div v-else class="text-center py-8">
+            <FileText class="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 class="mt-2 text-sm font-semibold text-gray-900">No questions yet</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Get started by adding your first question to this exam.
+            </p>
+            <div class="mt-6">
+              <Button @click="() => router.push({ name: 'AddQuestion', params: { examId: exam.uuid } })">
+                <Plus class="w-4 h-4 mr-2" />
+                Add Question
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -158,26 +451,92 @@ const handleDelete = async () => {
 
     <!-- Edit Exam Dialog -->
     <Dialog v-model:open="isEditDialogOpen">
-      <DialogContent>
+      <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Exam</DialogTitle>
           <DialogDescription>Update the exam details below.</DialogDescription>
         </DialogHeader>
 
-        <div class="space-y-4">
-          <div>
-            <Label for="title">Title</Label>
-            <Input id="title" v-model="editTitle" />
+        <div class="space-y-6">
+          <!-- Basic Information -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-medium">Basic Information</h4>
+            <div class="grid grid-cols-1 gap-4">
+              <div>
+                <Label for="title">Title *</Label>
+                <Input id="title" v-model="editTitle" placeholder="Enter exam title" />
+              </div>
+              <div>
+                <Label for="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  v-model="editDescription" 
+                  placeholder="Enter exam description"
+                  rows="3"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <Label for="description">Description</Label>
-            <Input id="description" v-model="editDescription" />
+
+          <Separator />
+
+          <!-- Schedule & Settings -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-medium">Schedule & Settings</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label for="date">Date *</Label>
+                <Input id="date" type="date" v-model="editDate" />
+              </div>
+              <div>
+                <Label for="duration">Duration (minutes) *</Label>
+                <Input 
+                  id="duration" 
+                  type="number" 
+                  v-model.number="editDurationMinutes" 
+                  min="1"
+                  placeholder="120"
+                />
+              </div>
+              <div>
+                <Label for="start_time">Start Time *</Label>
+                <Input id="start_time" type="time" v-model="editStartTime" />
+              </div>
+              <div>
+                <Label for="end_time">End Time *</Label>
+                <Input id="end_time" type="time" v-model="editEndTime" />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <!-- Access & Status -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-medium">Access & Status</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label for="access_code">Access Code *</Label>
+                <Input 
+                  id="access_code" 
+                  v-model="editAccessCode" 
+                  placeholder="Enter access code"
+                  class="font-mono"
+                />
+              </div>
+              <div class="flex items-center space-x-2">
+                <Switch id="is_active" v-model:checked="editIsActive" />
+                <Label for="is_active">Active (students can access)</Label>
+              </div>
+            </div>
           </div>
         </div>
 
-        <DialogFooter class="mt-4">
+        <DialogFooter class="mt-6">
           <Button variant="outline" @click="isEditDialogOpen = false">Cancel</Button>
-          <Button @click="handleSave">Save</Button>
+          <Button @click="handleSave" :disabled="loading">
+            {{ loading ? 'Saving...' : 'Save Changes' }}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

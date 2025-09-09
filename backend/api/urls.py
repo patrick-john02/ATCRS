@@ -17,6 +17,7 @@ from api.services.admin_services import (
     ApplicantExamView,
     ApplicantAnswerView,
     AdminDashboardView,
+    AdminApplicantsViewSet,
 )
 #super admin
 from api.services.super_admin_services import (
@@ -36,6 +37,7 @@ router.register(r'register', RegistrationView, basename='registration')
 #admin side
 router.register(r'admin-manage-courses', CoursesView, basename='admin-courses')
 router.register(r'users', UsersView, basename='users')
+router.register(r'applicants', AdminApplicantsViewSet, basename='applicants')
 
 router.register(r'choices', ChoiceView, basename='choices')
 router.register(r'questions', QuestionView, basename='questions')
@@ -44,9 +46,9 @@ router.register(r'applicant-exam', ApplicantExamView, basename='applicant-exam')
 router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-answers')
 
 #super admin side
-router.register(r'admin-users', SuperAdminUserViewSet, basename='admin-users')
-router.register(r'applicants', SuperAdminApplicantsViewSet, basename='applicants')
-router.register(r'superadmin-manage-courses', SuperAdminManageCourses, basename='superadmin-courses')
+router.register(r'superadmin/admin-users', SuperAdminUserViewSet, basename='superadmin-admin-users')
+router.register(r'superadmin/applicants', SuperAdminApplicantsViewSet, basename='superadmin-applicants')
+router.register(r'superadmin/manage-courses', SuperAdminManageCourses, basename='superadmin-courses')
 
 
 #applicants side

@@ -34,3 +34,25 @@ export interface ExamMinimal {
 export interface ExamFull extends ExamMinimal {
   questions: Question[]
 }
+
+export interface ExamUpdateData {
+  title?: string
+  description?: string
+  date?: string
+  start_time?: string
+  end_time?: string
+  duration_minutes?: number
+  access_code?: string
+  is_active?: boolean
+}
+
+export interface ExamCreateData {
+  title: string
+  description: string
+  date: string
+  start_time: string
+  end_time: string
+  duration_minutes: number
+  access_code: string
+  is_active: boolean
+}

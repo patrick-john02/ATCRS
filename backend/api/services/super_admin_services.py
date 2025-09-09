@@ -23,8 +23,7 @@ class SuperAdminUserViewSet(viewsets.ModelViewSet):
 
 class SuperAdminApplicantsViewSet(viewsets.ModelViewSet):
     serializer_class = SuperAdminUserSerializer
-    permission_classes = [AllowAny]
-    # permission_classes = [IsAdmin, IsSuperAdmin, IsAuthenticated ]
+    permission_classes = [IsSuperAdmin, IsAuthenticated]
     
     def get_queryset(self):
         queryset = ApplicantProfile.objects.filter(user_type = 'applicant').order_by('created_at')
