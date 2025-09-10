@@ -5,11 +5,13 @@ from api.models.exam import *
 from django.utils import timezone
 
 class ChoiceSerializer(serializers.ModelSerializer):
+    question = serializers.UUIDField(source="question.uuid", read_only=True)
     class Meta:
         model = Choice
         fields = ['uuid', 'question', 'label', 'text', 'is_correct']
 
 class QuestionSerializer(serializers.ModelSerializer):
+    exam = serializers.UUIDField(source="exam.uuid", read_only=True)
     choices = ChoiceSerializer(many=True, read_only=True)
 
     class Meta:

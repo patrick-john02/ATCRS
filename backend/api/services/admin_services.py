@@ -65,12 +65,12 @@ class ChoiceView(viewsets.ModelViewSet):
 class QuestionView(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]
+    permission_classes = [AllowAny]
 
 class ExamView(viewsets.ModelViewSet):
     queryset = Exam.objects.all()
     serializer_class = ExamSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     lookup_field = 'uuid'
 
 class ApplicantExamView(viewsets.ModelViewSet):

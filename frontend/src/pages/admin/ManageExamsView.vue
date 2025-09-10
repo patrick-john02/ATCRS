@@ -25,7 +25,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,7 +33,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 
 // Icons
-import { Calendar, Clock, Users, FileText, Settings, Trash2, Plus, Eye } from "lucide-vue-next"
+import { Calendar, Clock, Users, FileText, Settings, Trash2, Plus, Eye, Edit, ArrowLeft } from "lucide-vue-next"
 
 // Store + Router
 const examStore = useExamsStore()
@@ -46,6 +45,8 @@ const examId = computed(() => route.params.id as string)
 // Dialog states
 const isEditDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
+const isQuestionDeleteDialogOpen = ref(false)
+const questionToDelete = ref<string | null>(null)
 
 // Editable exam fields
 const editTitle = ref("")
@@ -122,7 +123,7 @@ const handleToggleStatus = async () => {
   
   try {
     await examStore.toggleExamStatus(exam.value.uuid)
-    toast.success(`Exam ${exam.value.is_active ? 'activated' : 'deactivated'} successfully`)
+    toast.success(`Exam ${!exam.value.is_active ? 'activated' : 'deactivated'} successfully`)
   } catch (err: any) {
     toast.error(err.message || "Failed to toggle exam status")
   }
@@ -139,6 +140,42 @@ const handleDelete = async () => {
   } catch (err: any) {
     toast.error(err.message || "Failed to delete exam")
   }
+}
+
+// Generate new access code
+const generateAccessCode = () => {
+  const code = Math.random().toString(36).substr(2, 8).toUpperCase()
+  editAccessCode.value = code
+}
+
+// Handle question actions
+const handleAddQuestion = () => {
+  // For now, show toast - implement actual question creation later
+  toast.info("Question creation feature coming soon")
+}
+
+const handleEditQuestion = (questionId: string) => {
+  // For now, show toast - implement actual question editing later
+  toast.info("Question editing feature coming soon")
+}
+
+const handleViewQuestion = (questionId: string) => {
+  // For now, show toast - implement question detail view later
+  toast.info("Question detail view coming soon")
+}
+
+const handleDeleteQuestion = (questionId: string) => {
+  questionToDelete.value = questionId
+  isQuestionDeleteDialogOpen.value = true
+}
+
+const confirmDeleteQuestion = async () => {
+  if (!questionToDelete.value) return
+  
+  // For now, show toast - implement actual question deletion later
+  toast.info("Question deletion feature coming soon")
+  isQuestionDeleteDialogOpen.value = false
+  questionToDelete.value = null
 }
 
 // Format date helper
@@ -166,28 +203,57 @@ const examStats = computed(() => {
   const totalQuestions = exam.value.questions?.length || 0
   const mcqQuestions = exam.value.questions?.filter(q => q.question_type === 'mcq').length || 0
   const essayQuestions = exam.value.questions?.filter(q => q.question_type === 'essay').length || 0
+  const trueFalseQuestions = exam.value.questions?.filter(q => q.question_type === 'true_false').length || 0
   
   return {
     totalQuestions,
     mcqQuestions,
-    essayQuestions
+    essayQuestions,
+    trueFalseQuestions
   }
 })
+
+// Get question type display name
+const getQuestionTypeDisplay = (type: string) => {
+  const types: Record<string, string> = {
+    'mcq': 'Multiple Choice',
+    'essay': 'Essay',
+    'true_false': 'True/False'
+  }
+  return types[type] || type.toUpperCase()
+}
+
+// Get question type color
+const getQuestionTypeVariant = (type: string) => {
+  const variants: Record<string, string> = {
+    'mcq': 'default',
+    'essay': 'secondary',
+    'true_false': 'outline'
+  }
+  return variants[type] || 'outline'
+}
 </script>
 
 <template>
   <div class="p-6 space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">Exam Management</h1>
-        <p class="text-muted-foreground">
-          Manage exam details, questions, and settings
-        </p>
+      <div class="flex items-center space-x-4">
+        <Button 
+          @click="() => router.push({ name: 'AdminManageExams' })" 
+          variant="ghost" 
+          size="sm"
+          class="px-2"
+        >
+          <ArrowLeft class="w-4 h-4" />
+        </Button>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Exam Management</h1>
+          <p class="text-muted-foreground">
+            Manage exam details, questions, and settings
+          </p>
+        </div>
       </div>
-      <Button @click="() => router.push({ name: 'AdminManageExams' })" variant="outline">
-        Back to Exams
-      </Button>
     </div>
 
     <!-- Loading State -->
@@ -225,9 +291,10 @@ const examStats = computed(() => {
                   {{ exam.is_active ? 'Active' : 'Inactive' }}
                 </Badge>
               </div>
-              <p class="text-muted-foreground">{{ exam.description }}</p>
+              <p class="text-muted-foreground" v-if="exam.description">{{ exam.description }}</p>
               <p class="text-sm text-muted-foreground">
-                Created: {{ formatDate(exam.created_at) }}
+                Created: {{ formatDate(exam.created_at) }} | 
+                Updated: {{ formatDate(exam.updated_at) }}
               </p>
             </div>
             <div class="flex items-center gap-2">
@@ -239,27 +306,30 @@ const examStats = computed(() => {
                 @click="handleToggleStatus" 
                 :variant="exam.is_active ? 'secondary' : 'default'"
                 size="sm"
+                :disabled="loading"
               >
                 {{ exam.is_active ? 'Deactivate' : 'Activate' }}
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger as-child>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 class="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
+              <AlertDialog v-model:open="isDeleteDialogOpen">
+                <Button variant="destructive" size="sm" @click="isDeleteDialogOpen = true">
+                  <Trash2 class="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Exam</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete "{{ exam.title }}"? This action cannot be undone and will remove all associated questions and answers.
+                      Are you sure you want to delete "{{ exam.title }}"? This action cannot be undone and will remove all associated questions and student responses.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction @click="handleDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Delete Exam
+                    <AlertDialogCancel @click="isDeleteDialogOpen = false">Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      @click="handleDelete" 
+                      class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      :disabled="loading"
+                    >
+                      {{ loading ? 'Deleting...' : 'Delete Exam' }}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -277,7 +347,7 @@ const examStats = computed(() => {
             <div class="flex items-center space-x-2">
               <Calendar class="h-5 w-5 text-blue-500" />
               <div class="space-y-1">
-                <p class="text-sm font-medium leading-none">Schedule</p>
+                <p class="text-sm font-medium leading-none">Date</p>
                 <p class="text-sm text-muted-foreground">
                   {{ formatDate(exam.date) }}
                 </p>
@@ -292,7 +362,7 @@ const examStats = computed(() => {
             <div class="flex items-center space-x-2">
               <Clock class="h-5 w-5 text-green-500" />
               <div class="space-y-1">
-                <p class="text-sm font-medium leading-none">Time</p>
+                <p class="text-sm font-medium leading-none">Time Range</p>
                 <p class="text-sm text-muted-foreground">
                   {{ formatTime(exam.start_time) }} - {{ formatTime(exam.end_time) }}
                 </p>
@@ -335,31 +405,47 @@ const examStats = computed(() => {
       <!-- Exam Details -->
       <Card>
         <CardHeader>
-          <CardTitle>Exam Details</CardTitle>
+          <CardTitle>Access & Settings</CardTitle>
         </CardHeader>
         <CardContent>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
               <div>
                 <Label class="text-sm font-medium text-muted-foreground">Access Code</Label>
-                <p class="font-mono text-lg font-semibold">{{ exam.access_code }}</p>
+                <p class="font-mono text-lg font-semibold bg-muted px-3 py-2 rounded-md inline-block">
+                  {{ exam.access_code }}
+                </p>
               </div>
               <div>
                 <Label class="text-sm font-medium text-muted-foreground">Status</Label>
-                <p>
+                <div class="mt-1">
                   <Badge :variant="exam.is_active ? 'default' : 'secondary'">
                     {{ exam.is_active ? 'Active - Students can access' : 'Inactive - Hidden from students' }}
                   </Badge>
-                </p>
+                </div>
               </div>
             </div>
             <div class="space-y-4" v-if="examStats">
               <div>
                 <Label class="text-sm font-medium text-muted-foreground">Question Breakdown</Label>
-                <div class="space-y-1">
-                  <p class="text-sm">Multiple Choice: {{ examStats.mcqQuestions }}</p>
-                  <p class="text-sm">Essay Questions: {{ examStats.essayQuestions }}</p>
-                  <p class="text-sm font-semibold">Total: {{ examStats.totalQuestions }}</p>
+                <div class="space-y-2 mt-2">
+                  <div class="flex justify-between text-sm">
+                    <span>Multiple Choice:</span>
+                    <span class="font-medium">{{ examStats.mcqQuestions }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span>Essay Questions:</span>
+                    <span class="font-medium">{{ examStats.essayQuestions }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span>True/False:</span>
+                    <span class="font-medium">{{ examStats.trueFalseQuestions }}</span>
+                  </div>
+                  <Separator />
+                  <div class="flex justify-between text-sm font-semibold">
+                    <span>Total:</span>
+                    <span>{{ examStats.totalQuestions }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -369,14 +455,14 @@ const examStats = computed(() => {
 
       <!-- Questions Section -->
       <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
           <div class="space-y-1">
             <CardTitle class="text-xl">Questions</CardTitle>
             <p class="text-sm text-muted-foreground">
               Manage exam questions and their choices
             </p>
           </div>
-          <Button size="sm" @click="() => router.push({ name: 'AddQuestion', params: { examId: exam.uuid } })">
+          <Button size="sm" @click="handleAddQuestion">
             <Plus class="w-4 h-4 mr-2" />
             Add Question
           </Button>
@@ -388,42 +474,69 @@ const examStats = computed(() => {
               :key="question.uuid"
               class="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
             >
-              <div class="flex items-start justify-between">
-                <div class="flex-1 space-y-2">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 space-y-3">
                   <div class="flex items-center gap-2">
-                    <Badge variant="outline">{{ index + 1 }}</Badge>
-                    <Badge :variant="question.question_type === 'mcq' ? 'default' : 'secondary'">
-                      {{ question.question_type.toUpperCase() }}
+                    <Badge variant="outline" class="font-mono text-xs">
+                      Q{{ index + 1 }}
+                    </Badge>
+                    <Badge :variant="getQuestionTypeVariant(question.question_type)">
+                      {{ getQuestionTypeDisplay(question.question_type) }}
                     </Badge>
                   </div>
-                  <p class="font-medium">{{ question.text }}</p>
                   
-                  <!-- Choices for MCQ -->
-                  <div v-if="question.choices && question.choices.length > 0" class="ml-6 space-y-2">
-                    <p class="text-sm font-medium text-muted-foreground">Choices:</p>
-                    <div class="grid grid-cols-1 gap-1">
-                      <div
-                        v-for="choice in question.choices"
-                        :key="choice.uuid"
-                        class="flex items-center gap-2 text-sm"
-                      >
-                        <span class="font-medium min-w-[20px]">{{ choice.label }}.</span>
-                        <span class="flex-1">{{ choice.text }}</span>
-                        <Badge v-if="choice.is_correct" variant="default" class="ml-auto">
-                          Correct
-                        </Badge>
+                  <div class="space-y-2">
+                    <p class="font-medium text-sm leading-relaxed">{{ question.text }}</p>
+                    
+                    <!-- Choices for MCQ/True-False -->
+                    <div v-if="question.choices && question.choices.length > 0" class="ml-4 space-y-2">
+                      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Answer Choices:
+                      </p>
+                      <div class="grid grid-cols-1 gap-2">
+                        <div
+                          v-for="choice in question.choices"
+                          :key="choice.uuid"
+                          class="flex items-start gap-3 text-sm p-2 rounded-md"
+                          :class="choice.is_correct ? 'bg-green-50 border-l-2 border-l-green-500' : 'bg-muted/30'"
+                        >
+                          <span class="font-semibold text-xs min-w-[20px] mt-0.5 uppercase">
+                            {{ choice.label }}.
+                          </span>
+                          <span class="flex-1">{{ choice.text }}</span>
+                          <Badge v-if="choice.is_correct" variant="default" size="sm" class="text-xs">
+                            Correct
+                          </Badge>
+                        </div>
                       </div>
                     </div>
+                    
+                    <!-- Essay question note -->
+                    <div v-else-if="question.question_type === 'essay'" class="ml-4">
+                      <p class="text-xs text-muted-foreground italic">
+                        This is an essay question. Students will provide written responses.
+                      </p>
+                    </div>
                   </div>
+                  
+                  <p class="text-xs text-muted-foreground">
+                    Created: {{ formatDate(question.created_at) }}
+                  </p>
                 </div>
-                <div class="flex items-center gap-2 ml-4">
-                  <Button size="sm" variant="outline">
+                
+                <div class="flex items-center gap-1 ml-4">
+                  <Button size="sm" variant="ghost" @click="handleViewQuestion(question.uuid)">
                     <Eye class="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="outline">
-                    Edit
+                  <Button size="sm" variant="ghost" @click="handleEditQuestion(question.uuid)">
+                    <Edit class="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="destructive">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    @click="handleDeleteQuestion(question.uuid)"
+                    class="text-destructive hover:text-destructive"
+                  >
                     <Trash2 class="w-4 h-4" />
                   </Button>
                 </div>
@@ -432,16 +545,16 @@ const examStats = computed(() => {
           </div>
 
           <!-- No Questions State -->
-          <div v-else class="text-center py-8">
+          <div v-else class="text-center py-12">
             <FileText class="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 class="mt-2 text-sm font-semibold text-gray-900">No questions yet</h3>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Get started by adding your first question to this exam.
+            <h3 class="mt-4 text-lg font-semibold text-gray-900">No questions yet</h3>
+            <p class="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+              Get started by adding your first question to this exam. You can create multiple choice, essay, or true/false questions.
             </p>
             <div class="mt-6">
-              <Button @click="() => router.push({ name: 'AddQuestion', params: { examId: exam.uuid } })">
+              <Button @click="handleAddQuestion">
                 <Plus class="w-4 h-4 mr-2" />
-                Add Question
+                Add Your First Question
               </Button>
             </div>
           </div>
@@ -514,19 +627,29 @@ const examStats = computed(() => {
           <!-- Access & Status -->
           <div class="space-y-4">
             <h4 class="text-sm font-medium">Access & Status</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-4">
               <div>
                 <Label for="access_code">Access Code *</Label>
-                <Input 
-                  id="access_code" 
-                  v-model="editAccessCode" 
-                  placeholder="Enter access code"
-                  class="font-mono"
-                />
+                <div class="flex gap-2">
+                  <Input 
+                    id="access_code" 
+                    v-model="editAccessCode" 
+                    placeholder="Enter access code"
+                    class="font-mono flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    @click="generateAccessCode"
+                    class="px-3"
+                  >
+                    Generate
+                  </Button>
+                </div>
               </div>
               <div class="flex items-center space-x-2">
                 <Switch id="is_active" v-model:checked="editIsActive" />
-                <Label for="is_active">Active (students can access)</Label>
+                <Label for="is_active">Active (students can access this exam)</Label>
               </div>
             </div>
           </div>
@@ -534,11 +657,34 @@ const examStats = computed(() => {
 
         <DialogFooter class="mt-6">
           <Button variant="outline" @click="isEditDialogOpen = false">Cancel</Button>
-          <Button @click="handleSave" :disabled="loading">
+          <Button @click="handleSave" :disabled="loading || !editTitle.trim()">
             {{ loading ? 'Saving...' : 'Save Changes' }}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Question Confirmation Dialog -->
+    <AlertDialog v-model:open="isQuestionDeleteDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Question</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this question? This action cannot be undone and will remove the question and all its associated choices.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="() => { isQuestionDeleteDialogOpen = false; questionToDelete = null; }">
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            @click="confirmDeleteQuestion" 
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete Question
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

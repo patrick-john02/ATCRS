@@ -18,7 +18,7 @@ import {
   useVueTable,
 } from "@tanstack/vue-table"
 import { ChevronsUpDown, ChevronDown, Plus, Search, Filter, MoreHorizontal, Clock, Users, FileText } from "lucide-vue-next"
-import { cn, valueUpdater } from "@/lib/utils"
+import { valueUpdater } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -477,7 +477,7 @@ const examStats = computed(() => {
                 :key="column.id"
                 class="capitalize"
                 :checked="column.getIsVisible()"
-                @update:checked="(value) => column.toggleVisibility(!!value)"
+                @update:checked="(value : Boolean) => column.toggleVisibility(!!value)"
               >
                 {{ column.id.replace('_', ' ') }}
               </DropdownMenuCheckboxItem>
@@ -542,7 +542,7 @@ const examStats = computed(() => {
             <select
               class="h-8 w-[70px] rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
               :value="table.getState().pagination.pageSize"
-              @change="(e) => table.setPageSize(Number(e.target.value))"
+              @change="(e: Event) => table.setPageSize(Number((e.target as HTMLSelectElement).value))"
             >
               <option value="10">10</option>
               <option value="20">20</option>
