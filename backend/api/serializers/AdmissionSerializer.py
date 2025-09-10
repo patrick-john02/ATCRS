@@ -5,21 +5,56 @@ from api.models.exam import *
 from django.utils import timezone
 
 class ChoiceSerializer(serializers.ModelSerializer):
-    question = serializers.UUIDField(source="question.uuid", read_only=True)
+    # allow passing question uuid when creating choice
+    question = serializers.UUIDField(write_only=True)
+    question_uuid = serializers.UUIDField(source="question.uuid", read_only=True)
+
     class Meta:
         model = Choice
-        fields = ['uuid', 'question', 'label', 'text', 'is_correct']
+        fields = ['uuid', 'question', 'question_uuid', 'label', 'text', 'is_correct', 'created_at']
+
+    def create(self, validated_data):
+        question_uuid = validated_data.pop("question")
+        question = Question.objects.get(uuid=question_uuid)
+        return Choice.objects.create(question=question, **validated_data)
 
 class QuestionSerializer(serializers.ModelSerializer):
-    exam = serializers.UUIDField(source="exam.uuid", read_only=True)
-    choices = ChoiceSerializer(many=True, read_only=True)
+    # allow passing exam uuid
+    exam = serializers.UUIDField(write_only=True)
+    exam_uuid = serializers.UUIDField(source="exam.uuid", read_only=True)
+
+    # nested choices
+    choices = ChoiceSerializer(many=True, required=False)
 
     class Meta:
         model = Question
-        fields = ['uuid', 'exam', 'text', 'question_type', 'correct_choice', 'choices', 'created_at']
+        fields = [
+            'uuid',
+            'exam',
+            'exam_uuid',
+            'text',
+            'question_type',
+            'correct_choice',
+            'choices',
+            'created_at',
+        ]
+
+    def create(self, validated_data):
+        exam_uuid = validated_data.pop("exam")
+        exam = Exam.objects.get(uuid=exam_uuid)
+
+        # handle nested choices
+        choices_data = validated_data.pop("choices", [])
+        question = Question.objects.create(exam=exam, **validated_data)
+
+        for choice_data in choices_data:
+            Choice.objects.create(question=question, **choice_data)
+
+        return question
+
 
 class ExamSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True, read_only=True)
+    questions = QuestionSerializer(many=True, required=False)
 
     class Meta:
         model = Exam
@@ -29,6 +64,19 @@ class ExamSerializer(serializers.ModelSerializer):
             'is_active', 'questions', 'created_at', 'updated_at'
         ]
         read_only_fields = ['uuid', 'slug', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        questions_data = validated_data.pop("questions", [])
+        exam = Exam.objects.create(**validated_data)
+
+        for question_data in questions_data:
+            choices_data = question_data.pop("choices", [])
+            question = Question.objects.create(exam=exam, **question_data)
+            for choice_data in choices_data:
+                Choice.objects.create(question=question, **choice_data)
+
+        return exam
+
 
 class ApplicantExamSerializer(serializers.ModelSerializer):
     exam_access_code = serializers.CharField(write_only=True)

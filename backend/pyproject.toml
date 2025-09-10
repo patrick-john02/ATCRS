@@ -8,5 +8,6 @@ dependencies = [
     "django-cors-headers>=4.7.0",
     "djangorestframework>=3.16.0",
     "djangorestframework-simplejwt[crypto]>=5.5.1",
+    "mysqlclient>=2.2.7",
     "pillow>=11.3.0",
 ]

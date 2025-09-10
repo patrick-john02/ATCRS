@@ -60,7 +60,7 @@ class AdminApplicantsViewSet(viewsets.ModelViewSet):
 class ChoiceView(viewsets.ModelViewSet):
     queryset = Choice.objects.all()
     serializer_class = ChoiceSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]
+    permission_classes = [AllowAny]
     
 class QuestionView(viewsets.ModelViewSet):
     queryset = Question.objects.all()
