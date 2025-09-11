@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h, ref, computed, onMounted } from "vue"
-import { useRouter, useRoute } from "vue-router"
+import { useRouter } from "vue-router"
 import type { ExamMinimal, ExamCreateData } from "@/types/adminManageExams"
 import { useExamsStore } from "@/stores/useAdminManageExams"
 
@@ -66,7 +66,7 @@ import { FlexRender } from "@tanstack/vue-table"
 import { toast } from "vue-sonner"
 
 const router = useRouter()
-const route = useRoute()
+// const route = useRoute()
 const examStore = useExamsStore()
 
 // Create Exam Dialog State

@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { useSidebarStore } from '@/stores/sidebar'
-import Sonner from './components/ui/sonner/Sonner.vue'
+// import { Toaster } from 'vue-sonner'
 
 const sidebarStore = useSidebarStore()
 sidebarStore.initialize()
-
 </script>
 
 <template>
   <div>
-      <RouterView/>
-      <Sonner position="bottom-right" />
-      
+    <RouterView />
+    <!-- Global toast provider -->
+    <!-- <Toaster richColors position="bottom-right" /> -->
   </div>
 </template>
+
 
 <style scoped>
 .logo {

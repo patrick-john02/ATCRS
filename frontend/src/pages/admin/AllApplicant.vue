@@ -51,7 +51,6 @@ import type { ViewApplicants } from '@/types/viewApplicants'
 
 const applicantStore = useApplicantUsersStore()
 
-// Form reactive object
 const form = reactive({
   username: '',
   email: '',
@@ -77,11 +76,9 @@ const openEditModal = (row: any) => {
 const handleSubmit = async () => {
   try {
     await applicantStore.addAdmin(form)
-    // Reset form
     Object.keys(form).forEach(key => {
       form[key as keyof typeof form] = ''
     })
-    // Close dialog
     isDialogOpen.value = false
   } catch (error) {
     console.error('Failed to add applicants:', error)
@@ -198,7 +195,7 @@ columnHelper.display({
         {
           size: 'sm',
           variant: 'outline',
-          onClick: () => openEditModal(row),   // ✅ open modal
+          onClick: () => openEditModal(row), 
         },
         () => 'Edit'
       ),
@@ -213,7 +210,6 @@ columnHelper.display({
       ),
     ]),
 })
-
 ]
 
 const sorting = ref<SortingState>([])
@@ -272,14 +268,12 @@ const totalRowsCount = computed(() => table.getFilteredRowModel().rows.length)
 
 <template>
   <div class="w-full space-y-4">
-    <!-- Error Alert -->
     <Alert v-if="applicantStore.error" variant="destructive">
       <AlertDescription>
         {{ applicantStore.error }}
       </AlertDescription>
     </Alert>
 
-    <!-- Filters and Controls -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
         <Input

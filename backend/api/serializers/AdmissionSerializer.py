@@ -18,6 +18,40 @@ class ChoiceSerializer(serializers.ModelSerializer):
         question = Question.objects.get(uuid=question_uuid)
         return Choice.objects.create(question=question, **validated_data)
 
+# class QuestionSerializer(serializers.ModelSerializer):
+#     # allow passing exam uuid
+#     exam = serializers.UUIDField(write_only=True)
+#     exam_uuid = serializers.UUIDField(source="exam.uuid", read_only=True)
+
+#     # nested choices
+#     choices = ChoiceSerializer(many=True, required=False)
+
+#     class Meta:
+#         model = Question
+#         fields = [
+#             'uuid',
+#             'exam',
+#             'exam_uuid',
+#             'text',
+#             'question_type',
+#             'correct_choice',
+#             'choices',
+#             'created_at',
+#         ]
+
+#     def create(self, validated_data):
+#         exam_uuid = validated_data.pop("exam")
+#         exam = Exam.objects.get(uuid=exam_uuid)
+
+#         # handle nested choices
+#         choices_data = validated_data.pop("choices", [])
+#         question = Question.objects.create(exam=exam, **validated_data)
+
+#         for choice_data in choices_data:
+#             Choice.objects.create(question=question, **choice_data)
+
+#         return question
+
 class QuestionSerializer(serializers.ModelSerializer):
     # allow passing exam uuid
     exam = serializers.UUIDField(write_only=True)
@@ -52,6 +86,25 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         return question
 
+    def update(self, instance, validated_data):
+        choices_data = validated_data.pop("choices", [])
+        
+        # Update question fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Handle choices update
+        if choices_data:
+            # Delete existing choices
+            instance.choices.all().delete()
+            
+            # Create new choices
+            for choice_data in choices_data:
+                Choice.objects.create(question=instance, **choice_data)
+
+        return instance
+    
 
 class ExamSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, required=False)

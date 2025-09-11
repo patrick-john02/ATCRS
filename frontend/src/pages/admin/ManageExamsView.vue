@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import { useExamsStore } from "@/stores/useAdminManageExams"
 import { toast } from "vue-sonner"
-
-// ShadCN UI
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,24 +28,22 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Calendar, Clock, FileText, Settings, Trash2, Plus, Eye, Edit, ArrowLeft } from "lucide-vue-next"
 
-// Icons
-import { Calendar, Clock, Users, FileText, Settings, Trash2, Plus, Eye, Edit, ArrowLeft } from "lucide-vue-next"
+import { useExamsStore } from "@/stores/useAdminManageExams"
+import { useQuestionsStore } from "@/stores/useAdminManageQuestions"
+import CreateQuestionDialog from "@/components/exams/CreateQuestionDialog.vue"
 
-// Store + Router
 const examStore = useExamsStore()
+const questionsStore = useQuestionsStore()
 const route = useRoute()
 const router = useRouter()
-
 const examId = computed(() => route.params.id as string)
-
-// Dialog states
 const isEditDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isQuestionDeleteDialogOpen = ref(false)
+const isCreateQuestionDialogOpen = ref(false)
 const questionToDelete = ref<string | null>(null)
-
-// Editable exam fields
 const editTitle = ref("")
 const editDescription = ref("")
 const editDate = ref("")
@@ -58,7 +53,6 @@ const editDurationMinutes = ref(0)
 const editAccessCode = ref("")
 const editIsActive = ref(false)
 
-// Load exam
 onMounted(async () => {
   if (examId.value) {
     try {
@@ -74,7 +68,6 @@ const exam = computed(() => examStore.currentExam)
 const loading = computed(() => examStore.loading)
 const error = computed(() => examStore.error)
 
-// Populate edit form with current exam data
 const populateEditForm = () => {
   if (examStore.currentExam) {
     const e = examStore.currentExam
@@ -89,13 +82,11 @@ const populateEditForm = () => {
   }
 }
 
-// Open edit dialog
 const openEditDialog = () => {
   populateEditForm()
   isEditDialogOpen.value = true
 }
 
-// Save changes
 const handleSave = async () => {
   if (!exam.value) return
   
@@ -117,7 +108,6 @@ const handleSave = async () => {
   }
 }
 
-// Toggle exam status
 const handleToggleStatus = async () => {
   if (!exam.value) return
   
@@ -129,7 +119,6 @@ const handleToggleStatus = async () => {
   }
 }
 
-// Delete exam
 const handleDelete = async () => {
   if (!exam.value) return
   
@@ -142,25 +131,31 @@ const handleDelete = async () => {
   }
 }
 
-// Generate new access code
 const generateAccessCode = () => {
   const code = Math.random().toString(36).substr(2, 8).toUpperCase()
   editAccessCode.value = code
 }
 
-// Handle question actions
 const handleAddQuestion = () => {
-  // For now, show toast - implement actual question creation later
-  toast.info("Question creation feature coming soon")
+  isCreateQuestionDialogOpen.value = true
+}
+
+const handleQuestionCreated = async () => {
+  if (examId.value) {
+    try {
+      await examStore.loadExamById(examId.value)
+      toast.success("Question added successfully")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to refresh exam data")
+    }
+  }
 }
 
 const handleEditQuestion = (questionId: string) => {
-  // For now, show toast - implement actual question editing later
   toast.info("Question editing feature coming soon")
 }
 
 const handleViewQuestion = (questionId: string) => {
-  // For now, show toast - implement question detail view later
   toast.info("Question detail view coming soon")
 }
 
@@ -172,13 +167,21 @@ const handleDeleteQuestion = (questionId: string) => {
 const confirmDeleteQuestion = async () => {
   if (!questionToDelete.value) return
   
-  // For now, show toast - implement actual question deletion later
-  toast.info("Question deletion feature coming soon")
-  isQuestionDeleteDialogOpen.value = false
-  questionToDelete.value = null
+  try {
+    await questionsStore.deleteQuestion(questionToDelete.value)
+    toast.success("Question deleted successfully")
+    
+    if (examId.value) {
+      await examStore.loadExamById(examId.value)
+    }
+  } catch (error: any) {
+    toast.error(error.message || "Failed to delete question")
+  } finally {
+    isQuestionDeleteDialogOpen.value = false
+    questionToDelete.value = null
+  }
 }
 
-// Format date helper
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -187,7 +190,6 @@ const formatDate = (dateString: string) => {
   })
 }
 
-// Format time helper
 const formatTime = (timeString: string) => {
   return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -196,7 +198,6 @@ const formatTime = (timeString: string) => {
   })
 }
 
-// Calculate exam stats
 const examStats = computed(() => {
   if (!exam.value) return null
   
@@ -213,7 +214,6 @@ const examStats = computed(() => {
   }
 })
 
-// Get question type display name
 const getQuestionTypeDisplay = (type: string) => {
   const types: Record<string, string> = {
     'mcq': 'Multiple Choice',
@@ -223,9 +223,8 @@ const getQuestionTypeDisplay = (type: string) => {
   return types[type] || type.toUpperCase()
 }
 
-// Get question type color
-const getQuestionTypeVariant = (type: string) => {
-  const variants: Record<string, string> = {
+const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outline" => {
+  const variants: Record<string, "default" | "secondary" | "outline"> = {
     'mcq': 'default',
     'essay': 'secondary',
     'true_false': 'outline'
@@ -256,7 +255,6 @@ const getQuestionTypeVariant = (type: string) => {
       </div>
     </div>
 
-    <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-12">
       <div class="text-center space-y-3">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -264,7 +262,6 @@ const getQuestionTypeVariant = (type: string) => {
       </div>
     </div>
 
-    <!-- Error State -->
     <div v-else-if="error" class="text-center py-12">
       <div class="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
         <FileText class="h-6 w-6 text-red-600" />
@@ -280,7 +277,6 @@ const getQuestionTypeVariant = (type: string) => {
 
     <!-- Exam Details -->
     <div v-else-if="exam" class="space-y-6">
-      <!-- Exam Header -->
       <Card>
         <CardHeader>
           <div class="flex items-start justify-between">
@@ -341,7 +337,6 @@ const getQuestionTypeVariant = (type: string) => {
 
       <!-- Exam Information Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Schedule Card -->
         <Card>
           <CardContent class="pt-6">
             <div class="flex items-center space-x-2">
@@ -511,7 +506,6 @@ const getQuestionTypeVariant = (type: string) => {
                       </div>
                     </div>
                     
-                    <!-- Essay question note -->
                     <div v-else-if="question.question_type === 'essay'" class="ml-4">
                       <p class="text-xs text-muted-foreground italic">
                         This is an essay question. Students will provide written responses.
@@ -571,7 +565,6 @@ const getQuestionTypeVariant = (type: string) => {
         </DialogHeader>
 
         <div class="space-y-6">
-          <!-- Basic Information -->
           <div class="space-y-4">
             <h4 class="text-sm font-medium">Basic Information</h4>
             <div class="grid grid-cols-1 gap-4">
@@ -593,7 +586,6 @@ const getQuestionTypeVariant = (type: string) => {
 
           <Separator />
 
-          <!-- Schedule & Settings -->
           <div class="space-y-4">
             <h4 class="text-sm font-medium">Schedule & Settings</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -664,7 +656,13 @@ const getQuestionTypeVariant = (type: string) => {
       </DialogContent>
     </Dialog>
 
-    <!-- Delete Question Confirmation Dialog -->
+    <CreateQuestionDialog
+      :open="isCreateQuestionDialogOpen"
+      @update:open="(value) => isCreateQuestionDialogOpen = value"
+      :exam-id="examId"
+      @question-created="handleQuestionCreated"
+    />
+
     <AlertDialog v-model:open="isQuestionDeleteDialogOpen">
       <AlertDialogContent>
         <AlertDialogHeader>

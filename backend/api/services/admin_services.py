@@ -61,11 +61,13 @@ class ChoiceView(viewsets.ModelViewSet):
     queryset = Choice.objects.all()
     serializer_class = ChoiceSerializer
     permission_classes = [AllowAny]
+    lookup_field = 'uuid'
     
 class QuestionView(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
     permission_classes = [AllowAny]
+    lookup_field = 'uuid'
 
 class ExamView(viewsets.ModelViewSet):
     queryset = Exam.objects.all()
@@ -77,11 +79,13 @@ class ApplicantExamView(viewsets.ModelViewSet):
     queryset = ApplicantExam.objects.all()
     serializer_class = ApplicantExamSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
+    lookup_field = 'uuid'
 
 class ApplicantAnswerView(viewsets.ModelViewSet):
     queryset = ApplicantAnswer.objects.all()
     serializer_class = ApplicantAnswerSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]   
+    permission_classes = [IsAdmin, IsAuthenticated] 
+    lookup_field = 'uuid' 
 
 class UsersView(viewsets.ModelViewSet):    
     queryset = ApplicantProfile.objects.all()
@@ -92,6 +96,7 @@ class CoursesView(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializers
     permission_classes = [IsAdmin, IsAuthenticated]
+    lookup_field = 'uuid'
 
 
 #DASHBOARD
