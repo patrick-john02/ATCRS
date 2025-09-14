@@ -33,6 +33,7 @@ import { Calendar, Clock, FileText, Settings, Trash2, Plus, Eye, Edit, ArrowLeft
 import { useExamsStore } from "@/stores/useAdminManageExams"
 import { useQuestionsStore } from "@/stores/useAdminManageQuestions"
 import CreateQuestionDialog from "@/components/exams/CreateQuestionDialog.vue"
+import UpdateQuestionDialog from "@/components/exams/UpdateQuestionDialog.vue"
 
 const examStore = useExamsStore()
 const questionsStore = useQuestionsStore()
@@ -43,6 +44,7 @@ const isEditDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isQuestionDeleteDialogOpen = ref(false)
 const isCreateQuestionDialogOpen = ref(false)
+const isUpdateQuestionDialogOpen = ref(false)
 const questionToDelete = ref<string | null>(null)
 const editTitle = ref("")
 const editDescription = ref("")
@@ -151,10 +153,19 @@ const handleQuestionCreated = async () => {
   }
 }
 
-const handleEditQuestion = (questionId: string) => {
-  toast.info("Question editing feature coming soon")
+const openUpdateDialog = () => {
+  isUpdateQuestionDialogOpen.value = true
 }
-
+const handleQuestionUpdated = async () => {
+  if (examId.value) {
+    try {
+      await examStore.loadExamById(examId.value)
+      toast.success("Question updated successfully")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to refresh exam data")
+    }
+  }
+}
 const handleViewQuestion = (questionId: string) => {
   toast.info("Question detail view coming soon")
 }
@@ -522,7 +533,7 @@ const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outlin
                   <Button size="sm" variant="ghost" @click="handleViewQuestion(question.uuid)">
                     <Eye class="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" @click="handleEditQuestion(question.uuid)">
+                  <Button size="sm" variant="ghost" @click="openUpdateDialog">
                     <Edit class="w-4 h-4" />
                   </Button>
                   <Button 
@@ -656,12 +667,19 @@ const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outlin
       </DialogContent>
     </Dialog>
 
-    <CreateQuestionDialog
-      :open="isCreateQuestionDialogOpen"
-      @update:open="(value) => isCreateQuestionDialogOpen = value"
+    <UpdateQuestionDialog
+      v-model:open="isUpdateQuestionDialogOpen"
+      :exam-id="examId"
+      @question-updated="handleQuestionUpdated"
+    />
+
+        <CreateQuestionDialog
+      v-model:open="isCreateQuestionDialogOpen"
       :exam-id="examId"
       @question-created="handleQuestionCreated"
     />
+
+
 
     <AlertDialog v-model:open="isQuestionDeleteDialogOpen">
       <AlertDialogContent>
@@ -677,7 +695,7 @@ const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outlin
           </AlertDialogCancel>
           <AlertDialogAction 
             @click="confirmDeleteQuestion" 
-            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+
           >
             Delete Question
           </AlertDialogAction>

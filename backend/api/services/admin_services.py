@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
+from rest_framework.decorators import action
 
 #permissions 
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -61,19 +62,37 @@ class ChoiceView(viewsets.ModelViewSet):
     queryset = Choice.objects.all()
     serializer_class = ChoiceSerializer
     permission_classes = [AllowAny]
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
     
 class QuestionView(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
     permission_classes = [AllowAny]
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
+
+    # POST /questions/{uuid}/choices/
+    @action(detail=True, methods=["post"], url_path="choices")
+    def create_choice(self, request, uuid=None):
+        question = self.get_object()
+        serializer = ChoiceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(question=question)
+        return Response(serializer.data)
 
 class ExamView(viewsets.ModelViewSet):
     queryset = Exam.objects.all()
     serializer_class = ExamSerializer
     permission_classes = [AllowAny]
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
+
+    # POST /exams/{uuid}/questions/
+    @action(detail=True, methods=["post"], url_path="questions")
+    def create_question(self, request, uuid=None):
+        exam = self.get_object()
+        serializer = QuestionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(exam=exam)
+        return Response(serializer.data)
 
 class ApplicantExamView(viewsets.ModelViewSet):
     queryset = ApplicantExam.objects.all()

@@ -50,13 +50,8 @@ class Question(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='questions')
     text = models.TextField()
-    correct_choice = models.ForeignKey('Choice', on_delete=models.SET_NULL, null=True, blank=True, related_name='correct_for_questions')
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='mcq')
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def clean(self):
-        if self.correct_choice and self.correct_choice.question != self:
-            raise ValidationError("Correct choice must belong to this question.")
 
     def __str__(self):
         return f"{self.exam.title} - {self.text[:50]}"

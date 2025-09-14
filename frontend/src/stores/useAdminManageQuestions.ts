@@ -5,11 +5,11 @@ import api from '@/utils/axios'
 
 interface Choice {
   uuid?: string
+  question_uuid?: string 
   label: string
   text: string
   is_correct: boolean
 }
-
 interface Question {
   uuid?: string
   text: string
@@ -18,30 +18,34 @@ interface Question {
 }
 
 interface CreateQuestionData {
-  exam: string 
+  exam_uuid: string 
   text: string
   question_type: 'mcq' | 'essay' | 'true_false'
   choices?: Choice[]
 }
 
+
 export const useQuestionsStore = defineStore('questions', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const createQuestion = async (questionData: CreateQuestionData) => {
-    loading.value = true
-    error.value = null
-    
-    try {
-      const response = await api.post('/questions/', questionData)
-      return response.data
-    } catch (err: any) {
-      error.value = err.response?.data?.detail || err.message || 'Failed to create question'
-      throw err
-    } finally {
-      loading.value = false
-    }
+const createQuestion = async (questionData: CreateQuestionData) => {
+  loading.value = true
+  error.value = null
+
+  try {
+    const response = await api.post(`/exams/${questionData.exam_uuid}/questions/`, {
+      text: questionData.text,
+      question_type: questionData.question_type
+    })
+    return response.data
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || err.message || 'Failed to create question'
+    throw err
+  } finally {
+    loading.value = false
   }
+}
 
   const updateQuestion = async (questionUuid: string, questionData: Partial<Question>) => {
     loading.value = true
@@ -72,20 +76,24 @@ export const useQuestionsStore = defineStore('questions', () => {
     }
   }
 
-  const createChoice = async (choiceData: { question: string; label: string; text: string; is_correct: boolean }) => {
-    loading.value = true
-    error.value = null
-    
-    try {
-      const response = await api.post('/choices/', choiceData)
-      return response.data
-    } catch (err: any) {
-      error.value = err.response?.data?.detail || err.message || 'Failed to create choice'
-      throw err
-    } finally {
-      loading.value = false
-    }
+const createChoice = async (choiceData: Choice) => {
+  loading.value = true
+  error.value = null
+
+  try {
+    const response = await api.post(`/questions/${choiceData.question_uuid}/choices/`, {
+      label: choiceData.label,
+      text: choiceData.text,
+      is_correct: choiceData.is_correct
+    })
+    return response.data
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || err.message || 'Failed to create choice'
+    throw err
+  } finally {
+    loading.value = false
   }
+}
 
   const updateChoice = async (choiceUuid: string, choiceData: Partial<Choice>) => {
     loading.value = true

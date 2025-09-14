@@ -1,17 +1,17 @@
 export interface Choice {
   uuid: string
-  question: number
+  question_uuid: string  
   label: string
   text: string
   is_correct: boolean
+  created_at: string     
 }
 
 export interface Question {
   uuid: string
-  exam: number
+  exam_uuid: string
   text: string
   question_type: "mcq" | "essay" | "true_false" | string
-  correct_choice: string | null
   choices: Choice[]
   created_at: string
 }
@@ -29,6 +29,10 @@ export interface ExamMinimal {
   is_active: boolean
   created_at: string
   updated_at: string
+}
+
+export interface ExamFull extends ExamMinimal {
+  questions: Question[]
 }
 
 export interface ExamFull extends ExamMinimal {
