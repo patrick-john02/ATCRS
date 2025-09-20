@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, Clock, FileText, Settings, Trash2, Plus, Eye, Edit, ArrowLeft } from "lucide-vue-next"
+import { Calendar, Clock, FileText, Settings, Trash2, Plus, Edit, ArrowLeft } from "lucide-vue-next"
 
 import { useExamsStore } from "@/stores/useAdminManageExams"
 import { useQuestionsStore } from "@/stores/useAdminManageQuestions"
@@ -54,6 +54,8 @@ const editEndTime = ref("")
 const editDurationMinutes = ref(0)
 const editAccessCode = ref("")
 const editIsActive = ref(false)
+//for update question
+const selectedQuestion = ref<any>(null)
 
 onMounted(async () => {
   if (examId.value) {
@@ -153,9 +155,11 @@ const handleQuestionCreated = async () => {
   }
 }
 
-const openUpdateDialog = () => {
+const openUpdateDialog = (question:any) => {
+  selectedQuestion.value = question
   isUpdateQuestionDialogOpen.value = true
 }
+
 const handleQuestionUpdated = async () => {
   if (examId.value) {
     try {
@@ -166,9 +170,9 @@ const handleQuestionUpdated = async () => {
     }
   }
 }
-const handleViewQuestion = (questionId: string) => {
-  toast.info("Question detail view coming soon")
-}
+// const handleViewQuestion = (questionId: string) => {
+//   toast.info("Question detail view coming soon")
+// }
 
 const handleDeleteQuestion = (questionId: string) => {
   questionToDelete.value = questionId
@@ -510,7 +514,7 @@ const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outlin
                             {{ choice.label }}.
                           </span>
                           <span class="flex-1">{{ choice.text }}</span>
-                          <Badge v-if="choice.is_correct" variant="default" size="sm" class="text-xs">
+                          <Badge v-if="choice.is_correct" variant="default" size="sm" class="text-xs bg-green-500 text-white">
                             Correct
                           </Badge>
                         </div>
@@ -530,10 +534,15 @@ const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outlin
                 </div>
                 
                 <div class="flex items-center gap-1 ml-4">
-                  <Button size="sm" variant="ghost" @click="handleViewQuestion(question.uuid)">
+                  <!--<Button size="sm" variant="ghost" @click="handleViewQuestion(question.uuid)">
                     <Eye class="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" @click="openUpdateDialog">
+                  </Button> -->
+                  <!-- Example: In your question list template -->
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    @click="openUpdateDialog(question)"
+                  >
                     <Edit class="w-4 h-4" />
                   </Button>
                   <Button 
@@ -669,15 +678,15 @@ const getQuestionTypeVariant = (type: string): "default" | "secondary" | "outlin
 
     <UpdateQuestionDialog
       v-model:open="isUpdateQuestionDialogOpen"
-      :exam-id="examId"
+      :question="selectedQuestion"
       @question-updated="handleQuestionUpdated"
     />
 
-        <CreateQuestionDialog
+    <CreateQuestionDialog
       v-model:open="isCreateQuestionDialogOpen"
       :exam-id="examId"
       @question-created="handleQuestionCreated"
-    />
+        />
 
 
 

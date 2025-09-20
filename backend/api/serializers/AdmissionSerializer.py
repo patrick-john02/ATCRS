@@ -12,7 +12,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-    choices = ChoiceSerializer(many=True, read_only=True)
+    choices = ChoiceSerializer(many=True, required=False)
 
     class Meta:
         model = Question
@@ -50,8 +50,6 @@ class ExamSerializer(serializers.ModelSerializer):
                 Choice.objects.create(question=question, **choice_data)
 
         return exam
-
-
 
 class ApplicantExamSerializer(serializers.ModelSerializer):
     exam_access_code = serializers.CharField(write_only=True)

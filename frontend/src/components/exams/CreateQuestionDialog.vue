@@ -21,9 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 import { Plus, Trash2 } from "lucide-vue-next"
-
 import { useQuestionsStore } from "@/stores/useAdminManageQuestions"
 
 interface Props {
@@ -143,7 +141,6 @@ const handleSubmit = async () => {
     question_type: questionType.value,
   }
 
-    
     const createdQuestion = await questionsStore.createQuestion(questionData)
     
     if (questionType.value !== "essay" && choices.value.length > 0) {
@@ -177,7 +174,6 @@ const handleCancel = () => {
   resetForm()
 }
 </script>
-
 <template>
   <Dialog v-model:open="isDialogOpen">
     <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -284,13 +280,9 @@ const handleCancel = () => {
           Cancel
         </Button>
 
-      <!-- <Button @click="handleSubmit" :disabled="!canSubmit || loading">
-        {{ loading ? 'Creating...' : 'Create Question' }}
-      </Button> -->
       <Button @click="handleSubmit" :disabled="loading">
-  {{ loading ? 'Creating...' : 'Create Question' }}
-</Button>
-
+        {{ loading ? 'Creating...' : 'Create Question' }}
+      </Button>
 
       </DialogFooter>
     </DialogContent>

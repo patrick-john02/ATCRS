@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
+
 import { Plus, Trash2 } from "lucide-vue-next"
 import { useQuestionsStore } from "@/stores/useAdminManageQuestions"
 
@@ -38,13 +38,20 @@ interface Emits {
   (e: 'update:open', value: boolean): void
   (e: 'question-updated'): void
 }
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  question: () => ({
+    uuid: "",
+    text: "",
+    question_type: "mcq",
+    choices: [],
+  }),
+})
 const emit = defineEmits<Emits>()
 const questionsStore = useQuestionsStore()
-const questionText = ref(props.question.text)
-const questionType = ref(props.question.question_type)
+const questionText = ref(props.question?.text || "")
+const questionType = ref(props.question?.question_type || "mcq")
 const choices = ref<Array<{ uuid?: string; label: string; text: string; is_correct: boolean }>>(
-  props.question.choices ? [...props.question.choices] : []
+  props.question?.choices ? [...props.question.choices] : []
 )
 const loading = ref(false)
 const isDialogOpen = computed({
@@ -66,6 +73,23 @@ watch(questionType, (newType) => {
     ]
   }
 })
+
+// Watch for prop changes to update form data
+watch(() => props.question, (newQuestion) => {
+  if (newQuestion) {
+    questionText.value = newQuestion.text
+    questionType.value = newQuestion.question_type
+    choices.value = newQuestion.choices ? [...newQuestion.choices] : []
+  }
+}, { immediate: true, deep: true })
+
+watch(() => props.open, (isOpen) => {
+  if (isOpen) {
+    // Reset form when dialog opens
+    resetForm()
+  }
+})
+
 const addChoice = () => {
   const nextLabel = String.fromCharCode(65 + choices.value.length)
   choices.value.push({ label: nextLabel, text: "", is_correct: false })
@@ -84,18 +108,59 @@ const setCorrectAnswer = (index: number) => {
   })
 }
 const resetForm = () => {
-  questionText.value = props.question.text
-  questionType.value = props.question.question_type
-  choices.value = props.question.choices ? [...props.question.choices] : []
+  questionText.value = props.question?.text || ""
+  questionType.value = props.question?.question_type || "mcq"
+  choices.value = props.question?.choices ? [...props.question.choices] : []
   loading.value = false
 }
 const handleSubmit = async () => {
   loading.value = true
   try {
+    // Update the question
     await questionsStore.updateQuestion(props.question.uuid, {
       text: questionText.value.trim(),
       question_type: questionType.value,
     })
+
+    // Handle choices for MCQ and True/False questions
+    if (questionType.value !== "essay") {
+      // Get existing choices from props
+      const existingChoices = props.question.choices || []
+      
+      // Update or create choices
+      for (let i = 0; i < choices.value.length; i++) {
+        const choice = choices.value[i]
+        const existingChoice = existingChoices[i]
+        
+        if (existingChoice && existingChoice.uuid) {
+          // Update existing choice
+          await questionsStore.updateChoice(existingChoice.uuid, {
+            label: choice.label,
+            text: choice.text,
+            is_correct: choice.is_correct
+          })
+        } else {
+          // Create new choice
+          await questionsStore.createChoice({
+            question_uuid: props.question.uuid,
+            label: choice.label,
+            text: choice.text,
+            is_correct: choice.is_correct
+          })
+        }
+      }
+      
+      // Delete removed choices (if current choices are fewer than existing)
+      if (existingChoices.length > choices.value.length) {
+        for (let i = choices.value.length; i < existingChoices.length; i++) {
+          const choiceToDelete = existingChoices[i]
+          if (choiceToDelete.uuid) {
+            await questionsStore.deleteChoice(choiceToDelete.uuid)
+          }
+        }
+      }
+    }
+    
     toast.success("Question updated successfully")
     emit('question-updated')
     isDialogOpen.value = false
