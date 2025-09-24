@@ -1,51 +1,59 @@
 from rest_framework import viewsets
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.db.models import Count, F
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from django.utils import timezone
 from api.models.exam import Exam, ApplicantExam
-from api.serializers.AdmissionSerializer import(
+from api.serializers.AdmissionSerializer import (
     UpcomingExamSerializer,
     RecentApplicantExamSerializer
 )
-
+from api.serializers.ApplicantsSerializer import (
+    StartExamSerializer,
     
+)
 
 class UpcomingExamView(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = UpcomingExamSerializer
 
-    def list(self, request):
-        user = request.user
-
-        try:
-            applicant = user.applicantprofile
-        except:
-            return Response({"detail": "Applicant profile not found."}, status=400)
-
+    def get_queryset(self):
         today = timezone.now().date()
-
-        upcoming_exams = Exam.objects.filter(
+        return Exam.objects.filter(
             is_active=True,
             is_expired=False,
             date__gte=today
-        ).order_by('date')
+        ).annotate(
+            applicant_count=Count('applicantexam')
+        ).filter(applicant_count__lt=F('max_applicants')).order_by('date')
 
-        result = []
-
-        for exam in upcoming_exams:
-            existing_attempts = ApplicantExam.objects.filter(applicant=applicant, exam=exam).count()
-            if existing_attempts < exam.max_attempts:
-                result.append(exam)
-                break
-
-        serializer = UpcomingExamSerializer(result, many=True)
-        return Response(serializer.data)
-
-class RecentExamScoresView(APIView):
+    
+class RecentExamScoresView(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = RecentApplicantExamSerializer
 
-    def get(self, request):
-        applicant = request.user.applicantprofile
-        recent_exams = ApplicantExam.objects.filter(applicant=applicant).order_by('-created_at')[:5]
-        serializer = RecentApplicantExamSerializer(recent_exams, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            applicant = user.applicantprofile
+        except:
+            return ApplicantExam.objects.none()
+
+        return ApplicantExam.objects.filter(applicant=applicant).order_by('-created_at')[:5]
+
+
+#start exam
+class StartExamView(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = StartExamSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from django.db import transaction
+
+        with transaction.atomic():
+            applicant_exam = serializer.save(applicant=request.user.applicantprofile)
+
+        return Response(self.get_serializer(applicant_exam).data, status=status.HTTP_201_CREATED)

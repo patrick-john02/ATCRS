@@ -30,6 +30,7 @@ class Exam(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
     access_code = models.CharField(max_length=10, blank=True, verbose_name="Access Code", help_text="Code required to access the exam")
     max_attempts = models.PositiveIntegerField(default=1, verbose_name="Max Attempts", help_text="Maximum number of allowed attempts")
+    max_applicants = models.PositiveIntegerField(default=30, verbose_name="Max Applicants")
     is_expired = models.BooleanField(default=False, verbose_name="Is Expired", help_text="Marks whether the exam has expired")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

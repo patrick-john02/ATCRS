@@ -54,31 +54,51 @@ class ExamSerializer(serializers.ModelSerializer):
 class ApplicantExamSerializer(serializers.ModelSerializer):
     exam_access_code = serializers.CharField(write_only=True)
     exam = ExamSerializer(read_only=True)
+    recommended_course = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = ApplicantExam
         fields = [
-            'uuid', 'applicant', 'exam', 'exam_access_code', 'started_at', 'completed_at',
-            'score', 'recommendation_score', 'status', 'total_questions',
-            'attempted_questions', 'correct_answers', 'accuracy',
-            'exam_attempt_number', 'created_at'
+            'uuid',
+            'applicant',
+            'exam',
+            'exam_access_code',
+            'started_at',
+            'completed_at',
+            'score',
+            'recommendation_score',
+            'accuracy',
+            'status',
+            'total_questions',
+            'attempted_questions',
+            'correct_answers',
+            'exam_attempt_number',
+            'recommended_course',
+            'created_at',
         ]
-        read_only_fields = ['uuid', 'created_at', 'started_at', 'status', 'total_questions']
+        read_only_fields = [
+            'uuid',
+            'created_at',
+            'started_at',
+            'status',
+            'total_questions',
+            'recommended_course',
+        ]
 
     def create(self, validated_data):
         access_code = validated_data.pop('exam_access_code')
         applicant = validated_data.get('applicant')
 
-        # Validate access code
+
         try:
             exam = Exam.objects.get(access_code=access_code, is_active=True)
         except Exam.DoesNotExist:
             raise serializers.ValidationError("Invalid or inactive access code.")
 
-        # Count previous attempts
+
         attempt_num = ApplicantExam.objects.filter(applicant=applicant, exam=exam).count() + 1
 
-        # Create new ApplicantExam
+
         applicant_exam = ApplicantExam(
             exam=exam,
             applicant=applicant,
@@ -90,6 +110,38 @@ class ApplicantExamSerializer(serializers.ModelSerializer):
         applicant_exam.save()
         return applicant_exam
 
+    def update(self, instance, validated_data):
+        """
+        Use this method when updating an exam (e.g., completing it and saving score),
+        and automatically assign a recommended course based on recommendation_score.
+        """
+        instance.score = validated_data.get('score', instance.score)
+        instance.correct_answers = validated_data.get('correct_answers', instance.correct_answers)
+        instance.attempted_questions = validated_data.get('attempted_questions', instance.attempted_questions)
+        instance.completed_at = validated_data.get('completed_at', timezone.now())
+        instance.status = 'completed'
+
+        if instance.total_questions > 0:
+            instance.recommendation_score = round((instance.correct_answers / instance.total_questions) * 100, 2)
+            instance.accuracy = instance.recommendation_score
+        else:
+            instance.recommendation_score = 0
+            instance.accuracy = 0
+
+        recommended_course = Course.objects.filter(min_score__lte=instance.recommendation_score).order_by('-min_score').first()
+        
+        # if recommended_course:
+        #     instance.recommended_course = recommended_course
+        #     instance.save()
+        
+        #when course_applied to update automatically
+        if recommended_course:
+            instance.applicant.course_applied = recommended_course
+            instance.applicant.save()
+        
+        
+        instance.save()
+        return instance
 
 class ApplicantAnswerSerializer(serializers.ModelSerializer):
     class Meta:

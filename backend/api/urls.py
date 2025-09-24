@@ -28,7 +28,8 @@ from api.services.super_admin_services import (
 #applicants
 from api.services.applicant_services import(
     UpcomingExamView,
-    RecentExamScoresView
+    RecentExamScoresView,
+    StartExamView,
 )
 router = DefaultRouter()
 
@@ -50,10 +51,11 @@ router.register(r'superadmin/admin-users', SuperAdminUserViewSet, basename='supe
 router.register(r'superadmin/applicants', SuperAdminApplicantsViewSet, basename='superadmin-applicants')
 router.register(r'superadmin/manage-courses', SuperAdminManageCourses, basename='superadmin-courses')
 
+# applicants side
+router.register(r'upcoming-exams', UpcomingExamView, basename='upcoming-exam')
+router.register(r'recent-exam-scores', RecentExamScoresView, basename='recent-exam-scores')
+router.register(r'start-exam', StartExamView, basename='start-exam')
 
-#applicants side
-router.register(r'exams/upcoming', UpcomingExamView, basename='upcoming-exam')
-path('recent-exam-scores/', RecentExamScoresView.as_view(), name='recent-exam-scores'),
 
 
 urlpatterns = [

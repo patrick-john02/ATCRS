@@ -141,6 +141,7 @@ const handleSubmit = async () => {
     question_type: questionType.value,
   }
 
+
     const createdQuestion = await questionsStore.createQuestion(questionData)
     
     if (questionType.value !== "essay" && choices.value.length > 0) {

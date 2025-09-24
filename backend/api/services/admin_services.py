@@ -70,7 +70,6 @@ class QuestionView(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     lookup_field = "uuid"
 
-    # POST /questions/{uuid}/choices/
     @action(detail=True, methods=["post"], url_path="choices")
     def create_choice(self, request, uuid=None):
         question = self.get_object()
@@ -85,7 +84,6 @@ class ExamView(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     lookup_field = "uuid"
 
-    # POST /exams/{uuid}/questions/
     @action(detail=True, methods=["post"], url_path="questions")
     def create_question(self, request, uuid=None):
         exam = self.get_object()
