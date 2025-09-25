@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-
+from api.models.admission import Course
 from api.models.auth import ApplicantProfile
 import uuid
 
@@ -83,11 +83,14 @@ class Choice(models.Model):
 class ApplicantExam(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     applicant = models.ForeignKey(ApplicantProfile, on_delete=models.CASCADE)
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
+    exam = models.ForeignKey('Exam', on_delete=models.CASCADE)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     recommendation_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    recommended_course = models.ForeignKey(
+        Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='recommended_exams'
+    )
     status = models.CharField(max_length=20, choices=EXAM_PROGRESS_CHOICES, default='not_started')
     total_questions = models.PositiveIntegerField(default=0)
     attempted_questions = models.PositiveIntegerField(default=0)
@@ -104,11 +107,19 @@ class ApplicantExam(models.Model):
         return f"{self.applicant.user.get_full_name()} - {self.exam.title}"
 
     def calculate_recommendation_score(self):
+        """
+        Calculates recommendation_score based on correct answers,
+        updates accuracy, and assigns recommended_course based on eligible courses.
+        """
         if self.total_questions == 0:
             self.recommendation_score = 0
         else:
             self.recommendation_score = round((self.correct_answers / self.total_questions) * 100, 2)
             self.accuracy = self.recommendation_score
+
+        # Determine recommended course(s) based on score
+        eligible_courses = Course.objects.filter(min_score__lte=self.recommendation_score).order_by('-min_score')
+        self.recommended_course = eligible_courses.first() if eligible_courses.exists() else None
         self.save()
 
 
@@ -147,3 +158,33 @@ class ApplicantAnswer(models.Model):
 # Added detection logic for cheating in ApplicantAnswer.save()
 # Added verbose_name and help_text to critical fields for Django Admin clarity
 
+# class ApplicantExam(models.Model):
+#     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+#     applicant = models.ForeignKey(ApplicantProfile, on_delete=models.CASCADE)
+#     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
+#     started_at = models.DateTimeField(null=True, blank=True)
+#     completed_at = models.DateTimeField(null=True, blank=True)
+#     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+#     recommendation_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+#     status = models.CharField(max_length=20, choices=EXAM_PROGRESS_CHOICES, default='not_started')
+#     total_questions = models.PositiveIntegerField(default=0)
+#     attempted_questions = models.PositiveIntegerField(default=0)
+#     correct_answers = models.PositiveIntegerField(default=0)
+#     accuracy = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+#     exam_attempt_number = models.PositiveIntegerField(default=1)
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         unique_together = ('applicant', 'exam')
+#         ordering = ['-created_at']
+
+#     def __str__(self):
+#         return f"{self.applicant.user.get_full_name()} - {self.exam.title}"
+
+#     def calculate_recommendation_score(self):
+#         if self.total_questions == 0:
+#             self.recommendation_score = 0
+#         else:
+#             self.recommendation_score = round((self.correct_answers / self.total_questions) * 100, 2)
+#             self.accuracy = self.recommendation_score
+#         self.save()
