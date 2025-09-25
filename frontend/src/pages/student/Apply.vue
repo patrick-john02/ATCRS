@@ -1,253 +1,123 @@
 <script setup lang="ts">
-import { h, ref } from 'vue'
-import { useAdminUsers } from '@/composables/useAdminUsers'
-import type {
-  ColumnFiltersState,
-  ExpandedState,
-  SortingState,
-  VisibilityState,
-} from '@tanstack/vue-table'
-import {
-  createColumnHelper,
-  FlexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useVueTable,
-} from '@tanstack/vue-table'
-import { ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
-import { cn, valueUpdater } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { ref, computed, onMounted } from 'vue'
+import { useApplicantUpcomingExamsStore } from '@/stores/useApplicantUpcomingExamsStore'
+import type { UpcomingExam } from '@/types/applicantUpcomingExams'
+import { applyToExamAPI } from '@/services/applicantUpcomingExamsServices'
 
-import type { AdminUser } from '@/types'
+// Pinia store
+const store = useApplicantUpcomingExamsStore()
+const appliedExams = ref<Set<string>>(new Set())
 
-const { admins } = useAdminUsers()
-
-const columnHelper = createColumnHelper<AdminUser>()
-const columns = [
-  columnHelper.display({
-    id: 'select',
-    header: ({ table }) =>
-      h(Checkbox, {
-        modelValue:
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate'),
-        'onUpdate:modelValue': value =>
-          table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all',
-      }),
-    cell: ({ row }) =>
-      h(Checkbox, {
-        modelValue: row.getIsSelected(),
-        'onUpdate:modelValue': value => row.toggleSelected(!!value),
-        ariaLabel: 'Select row',
-      }),
-    enableSorting: false,
-    enableHiding: false,
-  }),
-  columnHelper.accessor('first_name', {
-    header: 'First Name',
-    cell: info => info.getValue(),
-  }),
-  columnHelper.accessor('last_name', {
-    header: 'Last Name',
-    cell: info => info.getValue(),
-  }),
-  columnHelper.accessor('email', {
-    header: ({ column }) =>
-      h(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () =>
-            column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Email', h(ChevronsUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
-    cell: info => h('div', { class: 'lowercase' }, info.getValue()),
-  }),
-  columnHelper.accessor('is_active', {
-    header: 'Active',
-    cell: ({ row }) =>
-      h(
-        'span',
-        {
-          class: row.original.is_active ? 'text-green-600' : 'text-red-600',
-        },
-        row.original.is_active ? 'Yes' : 'No',
-      ),
-  }),
-  columnHelper.accessor('date_joined', {
-    header: 'Date Joined',
-    cell: ({ row }) =>
-      new Date(row.original.date_joined).toLocaleDateString(),
-  }),
-]
-
-const sorting = ref<SortingState>([])
-const columnFilters = ref<ColumnFiltersState>([])
-const columnVisibility = ref<VisibilityState>({})
-const rowSelection = ref({})
-const expanded = ref<ExpandedState>({})
-
-const table = useVueTable({
-  data: admins,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getExpandedRowModel: getExpandedRowModel(),
-  onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
-  onColumnFiltersChange: updaterOrValue =>
-    valueUpdater(updaterOrValue, columnFilters),
-  onColumnVisibilityChange: updaterOrValue =>
-    valueUpdater(updaterOrValue, columnVisibility),
-  onRowSelectionChange: updaterOrValue =>
-    valueUpdater(updaterOrValue, rowSelection),
-  onExpandedChange: updaterOrValue =>
-    valueUpdater(updaterOrValue, expanded),
-  state: {
-    get sorting() {
-      return sorting.value
-    },
-    get columnFilters() {
-      return columnFilters.value
-    },
-    get columnVisibility() {
-      return columnVisibility.value
-    },
-    get rowSelection() {
-      return rowSelection.value
-    },
-    get expanded() {
-      return expanded.value
-    },
-    columnPinning: {
-      left: ['first_name'],
-    },
-  },
+// Fetch exams from API
+onMounted(() => {
+  store.fetchExams()
 })
+
+// Reactive month/year
+const currentMonth = ref(new Date().getMonth())
+const currentYear = ref(new Date().getFullYear())
+
+// Generate calendar days for the active month
+// inside computed calendarDays
+const calendarDays = computed(() => {
+  const daysInMonth = new Date(currentYear.value, currentMonth.value + 1, 0).getDate()
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const date = new Date(currentYear.value, currentMonth.value, i + 1)
+    const today = new Date()
+    const events = store.exams.filter(e => new Date(e.date).toDateString() === date.toDateString())
+      .map(e => {
+        const isPast = new Date(e.date) < today
+        const alreadyApplied = appliedExams.value.has(e.uuid)
+        return {
+          ...e,
+          applied: !isPast && alreadyApplied,  // disable only future exams if already applied
+        }
+      })
+    return { date, events }
+  })
+})
+
+
+// Navigate months
+function prevMonth() {
+  if (currentMonth.value === 0) {
+    currentMonth.value = 11
+    currentYear.value -= 1
+  } else {
+    currentMonth.value -= 1
+  }
+}
+
+function nextMonth() {
+  if (currentMonth.value === 11) {
+    currentMonth.value = 0
+    currentYear.value += 1
+  } else {
+    currentMonth.value += 1
+  }
+}
+
+async function applyToExam(event: UpcomingExam) {
+  if (!event.uuid) {
+    console.error('Exam UUID is missing:', event)
+    return
+  }
+  try {
+    await applyToExamAPI(event)
+    appliedExams.value.add(event.uuid)
+    alert(`You have applied to: ${event.title}`)
+  } catch (err: any) {
+    alert(`Failed to apply: ${err.response?.data?.detail || err.message}`)
+  }
+}
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December']
 </script>
 
 <template>
-  <div class="w-full">
-    <div class="flex gap-2 items-center py-4">
-      <Input
-        class="max-w-sm"
-        placeholder="Filter emails..."
-        :model-value="table.getColumn('email')?.getFilterValue() as string"
-        @update:model-value="table.getColumn('email')?.setFilterValue($event)"
-      />
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button variant="outline" class="ml-auto">
-            Columns <ChevronDown class="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuCheckboxItem
-            v-for="column in table.getAllColumns().filter(col => col.getCanHide())"
-            :key="column.id"
-            class="capitalize"
-            :model-value="column.getIsVisible()"
-            @update:model-value="val => column.toggleVisibility(!!val)"
-          >
-            {{ column.id }}
-          </DropdownMenuCheckboxItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+  <div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div class="flex justify-between items-center mb-4">
+      <button class="px-4 py-1 bg-gray-200 rounded" @click="prevMonth">Prev</button>
+      <h1 class="text-2xl font-bold">{{ monthNames[currentMonth] }} {{ currentYear }}</h1>
+      <button class="px-4 py-1 bg-gray-200 rounded" @click="nextMonth">Next</button>
     </div>
 
-    <div class="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <TableHead
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :class="cn(
-                { 'sticky bg-background/95': header.column.getIsPinned() },
-                header.column.getIsPinned() === 'left' ? 'left-0' : 'right-0',
-              )"
-            >
-              <FlexRender
-                v-if="!header.isPlaceholder"
-                :render="header.column.columnDef.header"
-                :props="header.getContext()"
-              />
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <template v-if="table.getRowModel().rows.length">
-            <TableRow
-              v-for="row in table.getRowModel().rows"
-              :key="row.id"
-              :data-state="row.getIsSelected() && 'selected'"
-            >
-              <TableCell
-                v-for="cell in row.getVisibleCells()"
-                :key="cell.id"
-                :class="cn(
-                  { 'sticky bg-background/95': cell.column.getIsPinned() },
-                  cell.column.getIsPinned() === 'left' ? 'left-0' : 'right-0',
-                )"
-              >
-                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-              </TableCell>
-            </TableRow>
-          </template>
-          <TableRow v-else>
-            <TableCell :colspan="columns.length" class="text-center h-24">
-              No results.
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </div>
+    <div v-if="store.loading">Loading exams...</div>
+    <div v-if="store.error">{{ store.error }}</div>
 
-    <div class="flex items-center justify-end space-x-2 py-4">
-      <div class="flex-1 text-sm text-muted-foreground">
-        {{ table.getFilteredSelectedRowModel().rows.length }} of
-        {{ table.getFilteredRowModel().rows.length }} row(s) selected.
+    <div class="grid grid-cols-7 gap-2" v-else>
+      <!-- Weekday Headers -->
+      <div v-for="day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']" :key="day" class="font-semibold text-center">
+        {{ day }}
       </div>
-      <div class="space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="!table.getCanPreviousPage()"
-          @click="table.previousPage()"
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="!table.getCanNextPage()"
-          @click="table.nextPage()"
-        >
-          Next
-        </Button>
+
+      <!-- Calendar Days -->
+      <div v-for="day in calendarDays" :key="day.date.toISOString()" class="border rounded p-2 min-h-[100px] relative">
+        <div class="text-sm font-medium">{{ day.date.getDate() }}</div>
+
+        <div v-if="day.events.length" class="mt-1 space-y-1">
+          <div
+            v-for="event in day.events"
+            :key="event.uuid"
+            class="bg-indigo-100 dark:bg-indigo-700 text-indigo-800 dark:text-indigo-200 text-xs p-1 rounded flex flex-col gap-1"
+          >
+            <p class="truncate font-semibold">{{ event.title }}</p>
+            <p class="truncate">{{ event.description }}</p>
+            <button
+              class="mt-1 px-2 py-0.5 bg-indigo-500 text-white text-[10px] rounded hover:bg-indigo-600 disabled:opacity-50"
+              :disabled="event.applied"
+              @click="applyToExam(event)"
+            >
+              {{ event.applied ? 'Applied' : 'Apply' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+div.border:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+</style>

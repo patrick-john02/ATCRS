@@ -88,9 +88,9 @@ function logout() {
 
         <!-- Right: Notification + Profile -->
         <div class="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
+          <!-- <Button variant="ghost" size="icon">
             <Bell class="h-5 w-5" />
-          </Button>
+          </Button> -->
 
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
@@ -102,9 +102,9 @@ function logout() {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-40">
-              <DropdownMenuItem>
+              <!-- <DropdownMenuItem>
                 <User class="mr-2 h-4 w-4" /> Profile
-              </DropdownMenuItem>
+              </DropdownMenuItem> -->
               <DropdownMenuItem @click="logout">
                 <span class="text-red-500">Logout</span>
               </DropdownMenuItem>
