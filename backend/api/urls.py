@@ -55,10 +55,10 @@ router.register(r'questions', QuestionView, basename='questions')
 router.register(r'exams', ExamView, basename='exams')
 router.register(r'applicant-exam', ApplicantExamView, basename='applicant-exam')
 router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-answers')
-router.register(r'admin/results/failed', AdminFailedApplicantsViewSet, basename='admin-failed-applicants')
 
-router.register(r'admin/results', AdminViewResultsViewSet, basename='admin-results')
 router.register(r'admin/results/passed', AdminPassedApplicantsViewSet, basename='admin-passed-applicants')
+router.register(r'admin/results/failed', AdminFailedApplicantsViewSet, basename='admin-failed-applicants')
+router.register(r'admin/results', AdminViewResultsViewSet, basename='admin-results')
 
 #super admin side
 router.register(r'superadmin/admin-users', SuperAdminUserViewSet, basename='superadmin-admin-users')

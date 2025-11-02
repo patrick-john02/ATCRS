@@ -56,7 +56,7 @@ const navMain = [
     items: [
       { title: 'View Results', url: '/admin/results' },
       { title: 'Passed Applicants', url: '/admin/results/passed' },
-      { title: 'Failed Applicants', url: '/admin/results/failed' },
+      // { title: 'Failed Applicants', url: '/admin/results/failed' },
     ],
   },
   {

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from rest_framework.decorators import action
-
+from django.db import models
 #permissions 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 #permissions
@@ -36,6 +36,7 @@ from api.serializers.AdmissionSerializer import (
     ApplicantExamSerializer,
     ApplicantAnswerSerializer,
     AdminResultSerializer,
+    AdminDetailedResultSerializer
     
 )
 
@@ -114,7 +115,7 @@ class CoursesView(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializers
     permission_classes = [IsAdmin, IsAuthenticated]
-    lookup_field = 'uuid'
+    lookup_field = 'pk'
 
 
 #DASHBOARD
@@ -154,7 +155,7 @@ class AdminCourseStatisticsView(APIView):
 
 #results
 class AdminViewResultsViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = AdminResultSerializer  # Changed
+    serializer_class = AdminDetailedResultSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
     lookup_field = 'uuid'
     
@@ -165,15 +166,73 @@ class AdminViewResultsViewSet(viewsets.ReadOnlyModelViewSet):
             'recommended_course'
         ).order_by('-completed_at')
         
+        # Filter by exam
         exam_uuid = self.request.query_params.get('exam')
         if exam_uuid:
             queryset = queryset.filter(exam__uuid=exam_uuid)
         
+        # Filter by course
         course_id = self.request.query_params.get('course')
         if course_id:
             queryset = queryset.filter(recommended_course_id=course_id)
-            
+        
+        # Filter by score range
+        min_score = self.request.query_params.get('min_score')
+        if min_score:
+            queryset = queryset.filter(recommendation_score__gte=min_score)
+        
+        max_score = self.request.query_params.get('max_score')
+        if max_score:
+            queryset = queryset.filter(recommendation_score__lte=max_score)
+        
+        # Filter by status
+        status = self.request.query_params.get('status')
+        if status:
+            if status == 'passed':
+                queryset = queryset.filter(recommended_course__isnull=False)
+            elif status == 'failed':
+                queryset = queryset.filter(recommended_course__isnull=True)
+        
+        # Search by applicant name or email
+        search = self.request.query_params.get('search')
+        if search:
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(applicant__user__first_name__icontains=search) |
+                Q(applicant__user__last_name__icontains=search) |
+                Q(applicant__user__email__icontains=search)
+            )
+        
         return queryset
+    
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """Get overall statistics for results"""
+        from django.db.models import Avg, Count, Max, Min
+        
+        queryset = self.get_queryset()
+        
+        stats = queryset.aggregate(
+            total_exams=Count('id'),
+            average_score=Avg('recommendation_score'),
+            highest_score=Max('recommendation_score'),
+            lowest_score=Min('recommendation_score'),
+            passed_count=Count('id', filter=models.Q(recommended_course__isnull=False)),
+            failed_count=Count('id', filter=models.Q(recommended_course__isnull=True)),
+        )
+        
+        # Course distribution
+        course_distribution = queryset.values(
+            'recommended_course__code',
+            'recommended_course__name'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        return Response({
+            'statistics': stats,
+            'course_distribution': list(course_distribution),
+        })
     
     
 class AdminPassedApplicantsViewSet(viewsets.ReadOnlyModelViewSet):

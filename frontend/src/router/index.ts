@@ -78,12 +78,12 @@ const router = createRouter({
           meta: { breadcrumb: 'Passed Applicants' },
           component: () => import('@/pages/admin/PassedApplicants.vue'),
         },
-        {
-          path: '/admin/results/failed',
-          name: 'AdminFailedApplicants',
-          meta: { breadcrumb: 'Failed Applicants' },
-          component: () => import('@/pages/admin/FailedApplicants.vue'),
-        },
+        // {
+        //   path: '/admin/results/failed',
+        //   name: 'AdminFailedApplicants',
+        //   meta: { breadcrumb: 'Failed Applicants' },
+        //   component: () => import('@/pages/admin/FailedApplicants.vue'),
+        // },
         {
           path: '/admin/courses',
           name: 'AdminCourses',

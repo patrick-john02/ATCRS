@@ -192,7 +192,8 @@ class ApplicantAnswerSerializer(serializers.ModelSerializer):
 class CourseSerializers(serializers.ModelSerializer):
     class Meta:
         model = Course
-        fields = '__all__'
+        fields = ['id', 'code', 'name', 'min_score']
+        read_only_fields = ['id']
 
 # class UpcomingExamSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -377,3 +378,57 @@ class AdminResultSerializer(serializers.ModelSerializer):
             'completed_at',
             'created_at',
         ]
+        
+class AdminDetailedResultSerializer(serializers.ModelSerializer):
+    applicant = serializers.SerializerMethodField()
+    exam = serializers.SerializerMethodField()
+    recommended_course = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ApplicantExam
+        fields = [
+            'uuid',
+            'applicant',
+            'exam',
+            'score',
+            'recommendation_score',
+            'accuracy',
+            'total_questions',
+            'attempted_questions',
+            'correct_answers',
+            'recommended_course',
+            'exam_attempt_number',
+            'status',
+            'started_at',
+            'completed_at',
+            'created_at',
+        ]
+    
+    def get_applicant(self, obj):
+        return {
+            'id': obj.applicant.id,
+            'name': obj.applicant.user.get_full_name(),
+            'email': obj.applicant.user.email,
+            'contact_number': obj.applicant.contact_number,
+            'application_status': obj.applicant.application_status,
+            'exam_status': obj.applicant.exam_status,
+        }
+    
+    def get_exam(self, obj):
+        return {
+            'uuid': str(obj.exam.uuid),
+            'title': obj.exam.title,
+            'description': obj.exam.description,
+            'date': obj.exam.date,
+            'duration_minutes': obj.exam.duration_minutes,
+        }
+    
+    def get_recommended_course(self, obj):
+        if obj.recommended_course:
+            return {
+                'id': obj.recommended_course.id,
+                'code': obj.recommended_course.code,
+                'name': obj.recommended_course.name,
+                'min_score': float(obj.recommended_course.min_score) if obj.recommended_course.min_score else None,
+            }
+        return None
