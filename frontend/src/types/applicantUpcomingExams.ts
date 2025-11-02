@@ -1,3 +1,4 @@
+// applicantUpcomingExams.ts - Update type
 export interface UpcomingExam {
   uuid: string
   title: string
@@ -8,4 +9,7 @@ export interface UpcomingExam {
   duration_minutes: number
   access_code: string
   max_attempts: number
+  max_applicants: number
+  available_slots: number
+  is_applied: boolean
 }

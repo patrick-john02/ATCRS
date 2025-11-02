@@ -114,7 +114,7 @@ const removeChoice = (index: number) => {
 const setCorrectAnswer = (index: number) => {
   // For MCQ and True/False, only one answer can be correct
   choices.value.forEach((choice, i) => {
-    choice.is_correct = i === index
+    choice.is_correct = (i === index)  // Explicitly set true/false
   })
 }
 
@@ -129,39 +129,44 @@ const resetForm = () => {
 }
 
 const handleSubmit = async () => {
-  // if (!canSubmit.value) return
-  
   loading.value = true
-  
+
   try {
-    // Create the question
     const questionData = {
-    exam_uuid: props.examId,
-    text: questionText.value.trim(),
-    question_type: questionType.value,
-  }
+      exam_uuid: props.examId,
+      text: questionText.value.trim(),
+      question_type: questionType.value,
+    }
 
-
+    // Step 1: Create the question
     const createdQuestion = await questionsStore.createQuestion(questionData)
-    
+
+    // Defensive check — ensure uuid exists
+    if (!createdQuestion?.uuid) {
+      throw new Error('Question UUID not returned from API')
+    }
+
+    // Step 2: Create choices only for non-essay types
     if (questionType.value !== "essay" && choices.value.length > 0) {
       for (const choice of choices.value) {
-        if (choice.text.trim()) {
-          await questionsStore.createChoice({
-            question_uuid: createdQuestion.uuid,
-            label: choice.label,
-            text: choice.text.trim(),
-            is_correct: choice.is_correct
-          })
-        }
+        const trimmedText = choice.text.trim()
+        if (!trimmedText) continue
+
+        // Call store to create choice
+        await questionsStore.createChoice({
+          question_uuid: createdQuestion.uuid,
+          label: choice.label || "",           // avoid undefined label
+          text: trimmedText,
+          is_correct: !!choice.is_correct      // ensure boolean
+        })
       }
     }
-    
+
+    // Step 3: Notify user
     toast.success("Question created successfully")
     emit('question-created')
     isDialogOpen.value = false
     resetForm()
-    
   } catch (error: any) {
     console.error('Error creating question:', error)
     toast.error(error.message || "Failed to create question")

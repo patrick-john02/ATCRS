@@ -35,6 +35,7 @@ from api.serializers.AdmissionSerializer import (
     ExamSerializer,
     ApplicantExamSerializer,
     ApplicantAnswerSerializer,
+    AdminResultSerializer,
     
 )
 
@@ -122,9 +123,108 @@ class AdminDashboardView(APIView):
     
     def get(self, requests, *args, **kwargs):
         exams_count = Exam.objects.all().count()
-        applicants_count = ApplicantProfile.objects.filter(user_type = 'applicants').count()
+        applicants_count = ApplicantProfile.objects.filter(user_type = 'applicant').count()
         course_count = Course.objects.all().count()
         return Response({'applicants_count': applicants_count, 
                          'course_count': course_count,
                          'exams_count' : exams_count
                          })
+
+class AdminCourseStatisticsView(APIView):
+    permission_classes = [IsAdmin, IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        from django.db.models import Count, Q
+        
+        courses = Course.objects.annotate(
+            total_applicants=Count(
+                'applicantprofile',
+                filter=Q(applicantprofile__user_type='applicant'),
+                distinct=True
+            ),
+            recommended_count=Count(
+                'recommended_exams',
+                filter=Q(recommended_exams__status='completed'),
+                distinct=True
+            )
+        ).values('name', 'total_applicants', 'recommended_count')
+        
+        return Response(list(courses))
+
+
+#results
+class AdminViewResultsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = AdminResultSerializer  # Changed
+    permission_classes = [IsAdmin, IsAuthenticated]
+    lookup_field = 'uuid'
+    
+    def get_queryset(self):
+        queryset = ApplicantExam.objects.filter(status='completed').select_related(
+            'applicant__user',
+            'exam',
+            'recommended_course'
+        ).order_by('-completed_at')
+        
+        exam_uuid = self.request.query_params.get('exam')
+        if exam_uuid:
+            queryset = queryset.filter(exam__uuid=exam_uuid)
+        
+        course_id = self.request.query_params.get('course')
+        if course_id:
+            queryset = queryset.filter(recommended_course_id=course_id)
+            
+        return queryset
+    
+    
+class AdminPassedApplicantsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = AdminResultSerializer
+    permission_classes = [IsAdmin, IsAuthenticated]
+    lookup_field = 'uuid'
+    
+    def get_queryset(self):
+        queryset = ApplicantExam.objects.filter(
+            status='completed',
+            recommended_course__isnull=False
+        ).select_related(
+            'applicant__user',
+            'exam',
+            'recommended_course'
+        ).order_by('-recommendation_score', '-completed_at')
+        
+        # Optional filters
+        min_score = self.request.query_params.get('min_score')
+        if min_score:
+            queryset = queryset.filter(recommendation_score__gte=min_score)
+        
+        course_id = self.request.query_params.get('course')
+        if course_id:
+            queryset = queryset.filter(recommended_course_id=course_id)
+            
+        return queryset
+    
+
+class AdminFailedApplicantsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = AdminResultSerializer
+    permission_classes = [IsAdmin, IsAuthenticated]
+    lookup_field = 'uuid'
+    
+    def get_queryset(self):
+        queryset = ApplicantExam.objects.filter(
+            status='completed',
+            recommended_course__isnull=True
+        ).select_related(
+            'applicant__user',
+            'exam',
+            'recommended_course'
+        ).order_by('-completed_at')
+        
+        # Optional filters
+        max_score = self.request.query_params.get('max_score')
+        if max_score:
+            queryset = queryset.filter(recommendation_score__lte=max_score)
+        
+        exam_uuid = self.request.query_params.get('exam')
+        if exam_uuid:
+            queryset = queryset.filter(exam__uuid=exam_uuid)
+            
+        return queryset

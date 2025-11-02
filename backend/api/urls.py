@@ -18,6 +18,10 @@ from api.services.admin_services import (
     ApplicantAnswerView,
     AdminDashboardView,
     AdminApplicantsViewSet,
+    AdminViewResultsViewSet,
+    AdminPassedApplicantsViewSet,
+    AdminFailedApplicantsViewSet,
+    AdminCourseStatisticsView,
 )
 #super admin
 from api.services.super_admin_services import (
@@ -31,7 +35,11 @@ from api.services.applicant_services import(
     RecentExamScoresView,
     StartExamView,
     ApplicantProfileViewSet,
-    ApplicantExamSummaryView
+    ApplicantExamSummaryView,
+    ApplicantExamHistoryView,
+    TakeExamViewSet,
+    
+
 )
 router = DefaultRouter()
 
@@ -47,6 +55,10 @@ router.register(r'questions', QuestionView, basename='questions')
 router.register(r'exams', ExamView, basename='exams')
 router.register(r'applicant-exam', ApplicantExamView, basename='applicant-exam')
 router.register(r'applicant-answers', ApplicantAnswerView, basename='applicant-answers')
+router.register(r'admin/results/failed', AdminFailedApplicantsViewSet, basename='admin-failed-applicants')
+
+router.register(r'admin/results', AdminViewResultsViewSet, basename='admin-results')
+router.register(r'admin/results/passed', AdminPassedApplicantsViewSet, basename='admin-passed-applicants')
 
 #super admin side
 router.register(r'superadmin/admin-users', SuperAdminUserViewSet, basename='superadmin-admin-users')
@@ -60,6 +72,9 @@ router.register(r'start-exam', StartExamView, basename='start-exam')
 router.register(r'profile', ApplicantProfileViewSet, basename='applicant-profile')
 router.register(r'exam-summary', ApplicantExamSummaryView, basename='exam-summary')
 
+router.register(r'exam-history', ApplicantExamHistoryView, basename='exam-history')
+router.register(r'take-exam', TakeExamViewSet, basename='take-exam')
+
 
 
 
@@ -71,6 +86,7 @@ urlpatterns = [
     
     #admin
     path('admin-dashboard/', AdminDashboardView.as_view(), name = 'dashboard_admin_count'),
+    path('admin/course-statistics/', AdminCourseStatisticsView.as_view(), name='admin-course-statistics'),
     
     path('', include(router.urls)),
 ]

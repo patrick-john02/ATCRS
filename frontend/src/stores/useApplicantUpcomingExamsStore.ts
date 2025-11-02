@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { UpcomingExam } from '../types/applicantUpcomingExams'
-import { getUpcomingExams } from '../services/applicantUpcomingExamsServices'
+import { getUpcomingExams, applyToExamAPI } from '../services/applicantUpcomingExamsServices'
 
 export const useApplicantUpcomingExamsStore = defineStore('upcomingExams', () => {
   const exams = ref<UpcomingExam[]>([])
@@ -20,10 +20,26 @@ export const useApplicantUpcomingExamsStore = defineStore('upcomingExams', () =>
     }
   }
 
+  const applyToExam = async (exam: UpcomingExam) => {
+    loading.value = true
+    error.value = null
+    try {
+      await applyToExamAPI(exam)
+      await fetchExams() // Refresh list
+      return true
+    } catch (err: any) {
+      error.value = err.response?.data?.exam_id?.[0] || err.message || 'Failed to apply to exam'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     exams,
     loading,
     error,
     fetchExams,
+    applyToExam,
   }
 })

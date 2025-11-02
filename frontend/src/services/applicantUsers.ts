@@ -12,3 +12,11 @@ export async function createApplicantUser(
   const response = await api.post<ViewApplicants>("/applicants/", data);
   return response.data;
 }
+
+export async function updateApplicantUser(
+  id: number,
+  data: Partial<Omit<ViewApplicants, "id" | "username">> & { password?: string }
+): Promise<ViewApplicants> {
+  const response = await api.patch<ViewApplicants>(`/applicants/${id}/`, data)
+  return response.data
+}

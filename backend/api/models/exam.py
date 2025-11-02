@@ -47,12 +47,30 @@ class Exam(models.Model):
         ordering = ['-date']
 
 
+# class Question(models.Model):
+#     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+#     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='questions')
+#     text = models.TextField()
+#     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='mcq')
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"{self.exam.title} - {self.text[:50]}"
+
+#     class Meta:
+#         ordering = ['id']
+
 class Question(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='questions')
     text = models.TextField()
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='mcq')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def correct_choice(self):
+        """Returns the correct choice for this question"""
+        return self.choices.filter(is_correct=True).first()
 
     def __str__(self):
         return f"{self.exam.title} - {self.text[:50]}"
@@ -100,11 +118,10 @@ class ApplicantExam(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('applicant', 'exam')
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.applicant.user.get_full_name()} - {self.exam.title}"
+        return f"{self.applicant.user.get_full_name()} - {self.exam.title} (Attempt {self.exam_attempt_number})"
 
     def calculate_recommendation_score(self):
         """

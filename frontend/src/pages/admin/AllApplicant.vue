@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { h, ref, computed, onMounted, reactive } from 'vue'
+import { toast } from "vue-sonner"
 import { useApplicantUsersStore } from '@/stores/useApplicantUserStore'
 import type {
   ColumnFiltersState,
@@ -59,6 +60,24 @@ const form = reactive({
   contact_number: '',
   address: '',
   birthdate: '',
+  high_school: '',
+  year_graduated: '',
+  password: ''
+})
+
+const editForm = reactive({
+  id: 0,
+  email: '',
+  first_name: '',
+  last_name: '',
+  contact_number: '',
+  address: '',
+  birthdate: '',
+  high_school: '',
+  year_graduated: '',
+  application_status: '',
+  exam_status: '',
+  exam_score: '',
   password: ''
 })
 
@@ -68,22 +87,67 @@ const selectedApplicant = ref<any>(null)
 
 const openEditModal = (row: any) => {
   selectedApplicant.value = row.original
+  Object.assign(editForm, {
+    id: row.original.id,
+    email: row.original.email,
+    first_name: row.original.first_name,
+    last_name: row.original.last_name,
+    contact_number: row.original.contact_number,
+    address: row.original.address,
+    birthdate: row.original.birthdate,
+    high_school: row.original.high_school,
+    year_graduated: row.original.year_graduated,
+    application_status: row.original.application_status,
+    exam_status: row.original.exam_status,
+    exam_score: row.original.exam_score,
+    password: ''
+  })
   iseditDialogOpen.value = true
 }
 
-
-
 const handleSubmit = async () => {
   try {
-    await applicantStore.addAdmin(form)
+    await applicantStore.createApplicant(form)
     Object.keys(form).forEach(key => {
       form[key as keyof typeof form] = ''
     })
     isDialogOpen.value = false
+    toast.success('Applicant created successfully!')
   } catch (error) {
-    console.error('Failed to add applicants:', error)
+    console.error('Failed to add applicant:', error)
+    toast.error('Failed to create applicant')
   }
 }
+
+const handleUpdate = async () => {
+  try {
+    const updateData: any = {
+      email: editForm.email,
+      first_name: editForm.first_name,
+      last_name: editForm.last_name,
+      contact_number: editForm.contact_number,
+      address: editForm.address,
+      birthdate: editForm.birthdate,
+      high_school: editForm.high_school,
+      year_graduated: editForm.year_graduated,
+      application_status: editForm.application_status,
+      exam_status: editForm.exam_status,
+      exam_score: editForm.exam_score,
+    }
+    
+    if (editForm.password) {
+      updateData.password = editForm.password
+    }
+    
+    await applicantStore.updateApplicant(editForm.id, updateData)
+    iseditDialogOpen.value = false
+    toast.success('Applicant updated successfully!')
+  } catch (error) {
+    console.error('Failed to update applicant:', error)
+    toast.error('Failed to update applicant')
+  }
+}
+
 
 onMounted(() => {
   if (applicantStore.applicant.length === 0) {
@@ -199,15 +263,15 @@ columnHelper.display({
         },
         () => 'Edit'
       ),
-      h(
-        Button,
-        {
-          size: 'sm',
-          variant: 'destructive',
-          onClick: () => console.log('Delete:', row.original.id),
-        },
-        () => 'Delete'
-      ),
+      // h(
+      //   Button,
+      //   {
+      //     size: 'sm',
+      //     variant: 'destructive',
+      //     onClick: () => console.log('Delete:', row.original.id),
+      //   },
+      //   () => 'Delete'
+      // ),
     ]),
 })
 ]
@@ -355,7 +419,14 @@ const totalRowsCount = computed(() => table.getFilteredRowModel().rows.length)
                   <Label for="birthdate">Birthdate</Label>
                   <Input id="birthdate" v-model="form.birthdate" type="date" required />
                 </div>
-
+                <div>
+                  <Label for="high_school">High School</Label>
+                  <Input id="high_school" v-model="form.high_school" required />
+                </div>
+                <div>
+                  <Label for="year_graduated">Year Graduated</Label>
+                  <Input id="year_graduated" v-model="form.year_graduated" type="number" required />
+                </div>
                 <div class="col-span-2">
                   <Label for="password">Password</Label>
                   <Input id="password" v-model="form.password" type="password" required />
@@ -375,27 +446,76 @@ const totalRowsCount = computed(() => table.getFilteredRowModel().rows.length)
     </div>
 
     <Dialog v-model:open="iseditDialogOpen">
-  <DialogContent class="sm:max-w-[500px]">
-    <DialogHeader>
-      <DialogTitle>Edit Applicant</DialogTitle>
-      <DialogDescription>
-        Update the applicant details below.
-      </DialogDescription>
-    </DialogHeader>
+    <DialogContent class="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Edit Applicant</DialogTitle>
+        <DialogDescription>
+          Update the applicant details below.
+        </DialogDescription>
+      </DialogHeader>
 
-    <div v-if="selectedApplicant">
-      <p><b>ID:</b> {{ selectedApplicant.id }}</p>
-      <p><b>Name:</b> {{ selectedApplicant.first_name }} {{ selectedApplicant.last_name }}</p>
-      <!-- you can also bind inputs here for editing -->
-    </div>
+      <form @submit.prevent="handleUpdate" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <Label for="edit_email">Email</Label>
+            <Input id="edit_email" v-model="editForm.email" type="email" required />
+          </div>
+          <div>
+            <Label for="edit_first_name">First Name</Label>
+            <Input id="edit_first_name" v-model="editForm.first_name" required />
+          </div>
+          <div>
+            <Label for="edit_last_name">Last Name</Label>
+            <Input id="edit_last_name" v-model="editForm.last_name" required />
+          </div>
+          <div>
+            <Label for="edit_contact_number">Contact</Label>
+            <Input id="edit_contact_number" v-model="editForm.contact_number" required />
+          </div>
+          <div class="col-span-2">
+            <Label for="edit_address">Address</Label>
+            <Input id="edit_address" v-model="editForm.address" required />
+          </div>
+          <div>
+            <Label for="edit_birthdate">Birthdate</Label>
+            <Input id="edit_birthdate" v-model="editForm.birthdate" type="date" required />
+          </div>
+          <div>
+            <Label for="edit_high_school">High School</Label>
+            <Input id="edit_high_school" v-model="editForm.high_school" required />
+          </div>
+          <div>
+            <Label for="edit_year_graduated">Year Graduated</Label>
+            <Input id="edit_year_graduated" v-model="editForm.year_graduated" type="number" required />
+          </div>
+          <div>
+            <Label for="edit_application_status">Application Status</Label>
+            <Input id="edit_application_status" v-model="editForm.application_status" required />
+          </div>
+          <div>
+            <Label for="edit_exam_status">Exam Status</Label>
+            <Input id="edit_exam_status" v-model="editForm.exam_status" required />
+          </div>
+          <div>
+            <Label for="edit_exam_score">Exam Score</Label>
+            <Input id="edit_exam_score" v-model="editForm.exam_score" type="number" step="0.01" />
+          </div>
+          <div class="col-span-2">
+            <Label for="edit_password">New Password (leave blank to keep current)</Label>
+            <Input id="edit_password" v-model="editForm.password" type="password" />
+          </div>
+        </div>
 
-    <DialogFooter>
-      <Button variant="outline" @click="iseditDialogOpen = false">Cancel</Button>
-      <Button @click="console.log('Save changes')">Save</Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
-
+        <DialogFooter>
+          <Button type="button" variant="outline" @click="iseditDialogOpen = false">Cancel</Button>
+          <Button type="submit" :disabled="applicantStore.loading">
+            <Loader2 v-if="applicantStore.loading" class="mr-2 h-4 w-4 animate-spin" />
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
 
     <!-- Data Table -->
     <div class="rounded-md border">

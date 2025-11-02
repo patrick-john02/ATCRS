@@ -144,12 +144,12 @@ const router = createRouter({
       meta: { breadcrumb: 'Apply for Admission' },
       component: () => import('@/pages/student/Apply.vue'),
     },
-    {
-      path: 'admission/status',
-      name: 'AdmissionStatus',
-      meta: { breadcrumb: 'Admission Status' },
-      component: () => import('@/pages/student/Status.vue'),
-    },
+    // {
+    //   path: 'admission/status',
+    //   name: 'AdmissionStatus',
+    //   meta: { breadcrumb: 'Admission Status' },
+    //   component: () => import('@/pages/student/Status.vue'),
+    // },
     {
       path: 'admission/requirements',
       name: 'AdmissionRequirements',
@@ -157,25 +157,37 @@ const router = createRouter({
       component: () => import('@/pages/student/Requirements.vue'),
     },
 
-    // Online Examination
-    {
-      path: 'exam/instructions',
-      name: 'ExamInstructions',
-      meta: { breadcrumb: 'Exam Instructions' },
-      component: () => import('@/pages/student/Instructions.vue'),
-    },
-    {
-      path: 'exam/start',
-      name: 'TakeExam',
-      meta: { breadcrumb: 'Take Exam' },
-      component: () => import('@/pages/student/Start.vue'),
-    },
-    {
-      path: 'exam/history',
-      name: 'ExamHistory',
-      meta: { breadcrumb: 'Exam History' },
-      component: () => import('@/pages/student/History.vue'),
-    },
+   // Online Examination
+  {
+    path: 'exam/instructions',
+    name: 'ExamInstructions',
+    meta: { breadcrumb: 'Exam Instructions' },
+    component: () => import('@/pages/student/Instructions.vue'),
+  },
+  {
+    path: 'exam/view',
+    name: 'ViewExams',
+    meta: { breadcrumb: 'View Exams' },
+    component: () => import('@/pages/student/Start.vue'),
+  },
+  {
+    path: 'exam/take/:uuid',
+    name: 'take-exam',
+    meta: { breadcrumb: 'Take Exam' },
+    component: () => import('@/pages/student/TakeExam.vue'),
+  },
+  {
+    path: 'exam/result:uuid?',
+    name: 'exam-result',
+    meta: { breadcrumb: 'Exam Result' },
+    component: () => import('@/pages/student/ExamResult.vue'),
+  },
+  {
+    path: 'exam/history',
+    name: 'exam-history',
+    meta: { breadcrumb: 'Exam History' },
+    component: () => import('@/pages/student/ExamHistory.vue'),
+  },
 
     // Results
     {
@@ -184,13 +196,6 @@ const router = createRouter({
       meta: { breadcrumb: 'View Scores' },
       component: () => import('@/pages/student/Scores.vue'),
     },
-    {
-      path: 'results/download',
-      name: 'DownloadResult',
-      meta: { breadcrumb: 'Download Result' },
-      component: () => import('@/pages/student/Download.vue'),
-    },
-
    
   ],
 },

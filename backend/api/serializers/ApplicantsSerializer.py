@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from django.db.models import F
-from api.models.exam import Exam, ApplicantExam
+from api.models.exam import Exam, ApplicantExam, Question
 from api.serializers.AdmissionSerializer import ExamSerializer
 from api.models.auth import ApplicantProfile
 from api.models.admission import Course
@@ -139,30 +139,38 @@ class ApplicantProfileSerializer(serializers.ModelSerializer):
         return None
 
 class ApplyUpcomingExamSerializer(serializers.ModelSerializer):
-    exam_id = serializers.IntegerField(write_only=True)
+    exam_uuid = serializers.UUIDField(write_only=True)
 
     class Meta:
         model = ApplicantExam
-        fields = ['exam_id', 'uuid', 'started_at', 'status', 'exam_attempt_number']
+        fields = ['exam_uuid', 'uuid', 'started_at', 'status', 'exam_attempt_number']
         read_only_fields = ['uuid', 'started_at', 'status', 'exam_attempt_number']
 
-    def validate_exam_id(self, value):
+    def validate_exam_uuid(self, value):
         try:
-            exam = Exam.objects.get(id=value, is_active=True, is_expired=False, date__gte=timezone.now().date())
+            exam = Exam.objects.get(uuid=value, is_active=True, is_expired=False, date__gte=timezone.now().date())
         except Exam.DoesNotExist:
             raise serializers.ValidationError("Exam does not exist or is not available.")
         return value
 
     def create(self, validated_data):
         applicant = self.context['request'].user.profile
-        exam = Exam.objects.get(id=validated_data['exam_id'])
+        exam = Exam.objects.get(uuid=validated_data['exam_uuid'])
 
-        # Check if applicant already has an ongoing application for this exam
-        existing = ApplicantExam.objects.filter(applicant=applicant, exam=exam, status__in=['not_started','in_progress']).first()
+        # Check if applicant already has ANY application for this exam (including completed)
+        existing = ApplicantExam.objects.filter(applicant=applicant, exam=exam).first()
+        
         if existing:
-            return existing  # Return existing record instead of creating a new one
+            # If there's a completed exam, check if they can retake
+            if existing.status == 'completed':
+                attempt_number = ApplicantExam.objects.filter(applicant=applicant, exam=exam).count() + 1
+                if attempt_number > exam.max_attempts:
+                    raise serializers.ValidationError("You have reached the maximum allowed attempts for this exam.")
+            else:
+                # Return existing not_started or in_progress exam
+                return existing
 
-        # Count previous attempts
+        # Create new exam attempt
         attempt_number = ApplicantExam.objects.filter(applicant=applicant, exam=exam).count() + 1
         if attempt_number > exam.max_attempts:
             raise serializers.ValidationError("You have reached the maximum allowed attempts for this exam.")
@@ -170,28 +178,65 @@ class ApplyUpcomingExamSerializer(serializers.ModelSerializer):
         applicant_exam = ApplicantExam.objects.create(
             applicant=applicant,
             exam=exam,
-            started_at=timezone.now(),
-            status='in_progress',
+            started_at=None,
+            status='not_started',
             total_questions=exam.questions.count(),
             exam_attempt_number=attempt_number
         )
         return applicant_exam
 
 class UpcomingExamSerializer(serializers.ModelSerializer):
+    applicant_count = serializers.IntegerField(read_only=True)
+    is_applied = serializers.SerializerMethodField()
+    applicant_exam_uuid = serializers.SerializerMethodField()
+    
     class Meta:
         model = Exam
         fields = [
             'uuid',
             'title',
+            'description',
             'date',
             'start_time',
             'end_time',
             'duration_minutes',
             'max_attempts',
             'max_applicants',
+            'applicant_count',
             'is_active',
             'is_expired',
+            'is_applied',
+            'applicant_exam_uuid',
         ]
+    
+    def get_is_applied(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            try:
+                applicant = request.user.profile
+                return ApplicantExam.objects.filter(
+                    applicant=applicant,
+                    exam=obj,
+                    status__in=['not_started', 'in_progress']
+                ).exists()
+            except:
+                return False
+        return False
+    
+    def get_applicant_exam_uuid(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            try:
+                applicant = request.user.profile
+                exam = ApplicantExam.objects.filter(
+                    applicant=applicant,
+                    exam=obj,
+                    status__in=['not_started', 'in_progress']
+                ).first()
+                return str(exam.uuid) if exam else None
+            except:
+                return None
+        return None
 
 #Exam Summary
 class ApplicantExamSummarySerializer(serializers.ModelSerializer):
@@ -226,5 +271,182 @@ class ApplicantExamSummarySerializer(serializers.ModelSerializer):
         ]
 
     def get_eligible_courses(self, obj):
+        # Skip if recommendation_score is None
+        if obj.recommendation_score is None:
+            return []
         courses = Course.objects.filter(min_score__lte=obj.recommendation_score).order_by('-min_score')
-        return [{'code': c.code, 'name': c.name, 'min_score': float(c.min_score)} for c in courses]
+        return [
+            {'code': c.code, 'name': c.name, 'min_score': float(c.min_score)}
+            for c in courses
+        ]
+
+
+
+# serializers - Add new serializers in ApplicantsSerializer.py
+
+class ApplicantExamHistorySerializer(serializers.ModelSerializer):
+    exam = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ApplicantExam
+        fields = [
+            'uuid',
+            'exam',
+            'status',
+            'score',
+            'recommendation_score',
+            'recommended_course',
+            'total_questions',
+            'attempted_questions',
+            'correct_answers',
+            'accuracy',
+            'exam_attempt_number',
+            'started_at',
+            'completed_at',
+            'created_at',
+        ]
+    
+    def get_exam(self, instance):
+        return {
+            'uuid': str(instance.exam.uuid),
+            'title': instance.exam.title,
+            'description': instance.exam.description,
+            'date': instance.exam.date.isoformat(),
+        }
+        
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.recommended_course:
+            data['recommended_course'] = {
+                'code': instance.recommended_course.code,
+                'name': instance.recommended_course.name,
+            }
+        else:
+            data['recommended_course'] = None
+        return data
+
+
+class TakeExamSerializer(serializers.ModelSerializer):
+    exam_details = serializers.SerializerMethodField()
+    questions = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ApplicantExam
+        fields = [
+            'uuid',
+            'exam_details',
+            'questions',
+            'started_at',
+            'status',
+            'total_questions',
+            'attempted_questions',
+            'exam_attempt_number',
+        ]
+        read_only_fields = ['uuid', 'started_at', 'status', 'total_questions', 'attempted_questions', 'exam_attempt_number']
+    
+    def get_exam_details(self, obj):
+        return {
+            'uuid': str(obj.exam.uuid),
+            'title': obj.exam.title,
+            'description': obj.exam.description,
+            'duration_minutes': obj.exam.duration_minutes,
+            'total_questions': obj.total_questions,
+        }
+    
+    def get_questions(self, obj):
+        questions = obj.exam.questions.all()
+        result = []
+        for question in questions:
+            choices = question.choices.all()
+            result.append({
+                'uuid': str(question.uuid),
+                'text': question.text,
+                'question_type': question.question_type,
+                'choices': [
+                    {
+                        'uuid': str(choice.uuid),
+                        'label': choice.label,
+                        'text': choice.text,
+                    }
+                    for choice in choices
+                ]
+            })
+        return result
+
+
+class SubmitAnswerSerializer(serializers.Serializer):
+    question_uuid = serializers.UUIDField()
+    choice_uuid = serializers.UUIDField()
+    time_spent_seconds = serializers.IntegerField(required=False, default=0)
+    
+    def validate_question_uuid(self, value):
+        from api.models.exam import Question
+        try:
+            Question.objects.get(uuid=value)
+        except Question.DoesNotExist:
+            raise serializers.ValidationError("Question does not exist")
+        return value
+    
+    def validate_choice_uuid(self, value):
+        from api.models.exam import Choice
+        try:
+            Choice.objects.get(uuid=value)
+        except Choice.DoesNotExist:
+            raise serializers.ValidationError("Choice does not exist")
+        return value
+    
+    def create(self, validated_data):
+        from api.models.exam import Question, Choice, ApplicantAnswer
+        
+        applicant_exam = self.context['applicant_exam']
+        question = Question.objects.get(uuid=validated_data['question_uuid'])
+        choice = Choice.objects.get(uuid=validated_data['choice_uuid'])
+        
+        # Check if answer already exists
+        answer, created = ApplicantAnswer.objects.update_or_create(
+            applicant_exam=applicant_exam,
+            question=question,
+            defaults={
+                'selected_choice': choice,
+                'is_correct': choice.is_correct,
+                'time_spent_seconds': validated_data.get('time_spent_seconds', 0),
+            }
+        )
+        
+        # Update attempted questions count
+        if created:
+            applicant_exam.attempted_questions += 1
+        
+        # Update correct answers count
+        if answer.is_correct:
+            if not created:
+                # If updating, check if previous answer was incorrect
+                previous_answer = ApplicantAnswer.objects.filter(
+                    applicant_exam=applicant_exam,
+                    question=question
+                ).first()
+                if previous_answer and not previous_answer.is_correct:
+                    applicant_exam.correct_answers += 1
+            else:
+                applicant_exam.correct_answers += 1
+        
+        applicant_exam.save()
+        return answer
+
+
+class CompleteExamSerializer(serializers.Serializer):
+    def save(self):
+        applicant_exam = self.context['applicant_exam']
+        applicant_exam.status = 'completed'
+        applicant_exam.completed_at = timezone.now()
+        applicant_exam.calculate_recommendation_score()
+        applicant_exam.save()
+        
+        # Update applicant profile
+        applicant = applicant_exam.applicant
+        applicant.exam_status = 'completed'
+        applicant.exam_score = applicant_exam.recommendation_score
+        applicant.save()
+        
+        return applicant_exam
+    

@@ -25,21 +25,19 @@ const data = {
       url: '/student/dashboard',
       items: [],
     },
-    {
-      title: 'Admission',
-      url: '#',
-      items: [
-        { title: 'Apply for Admission', url: '/student/admission/apply' },
-        { title: 'Admission Status', url: '/student/admission/status' },
-        { title: 'Upload Requirements', url: '/student/admission/requirements' },
-      ],
-    },
+    // {
+    //   title: 'Admission',
+    //   url: '#',
+    //   items: [
+    //     { title: 'Apply for Admission', url: '/student/admission/apply' },
+    //     { title: 'Upload Requirements', url: '/student/admission/requirements' },
+    //   ],
+    // },
     {
       title: 'Online Examination',
       url: '#',
       items: [
-        { title: 'Exam Instructions', url: '/student/exam/instructions' },
-        { title: 'Take Exam', url: '/student/exam/start' },
+        { title: 'View Exams', url: '/student/exam/view' },
         { title: 'Exam History', url: '/student/exam/history' },
       ],
     },
@@ -48,7 +46,6 @@ const data = {
       url: '#',
       items: [
         { title: 'View Scores', url: '/student/results/scores' },
-        { title: 'Download Result', url: '/student/results/download' },
       ],
     },
   ],

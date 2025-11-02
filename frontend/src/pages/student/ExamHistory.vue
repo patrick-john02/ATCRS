@@ -1,8 +1,7 @@
-<!-- pages/student/Start.vue -->
 <script setup lang="ts">
-import { h, ref, onMounted } from 'vue'
+import { h, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
+import { useExamHistoryStore } from '@/stores/useExamHistoryStore'
 import type {
   ColumnFiltersState,
   SortingState,
@@ -17,8 +16,8 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronDown, ChevronsUpDown, Users, FileText, RefreshCcw } from 'lucide-vue-next'
-import { valueUpdater } from '@/lib/utils'
+import { ChevronDown, ChevronsUpDown, Calendar, Clock, Trophy, BookOpen, RefreshCcw } from 'lucide-vue-next'
+import { cn, valueUpdater } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -37,45 +36,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import api from '@/utils/axios'
-
-interface AvailableExam {
-  uuid: string
-  title: string
-  description: string
-  date: string
-  start_time: string
-  end_time: string
-  duration_minutes: number
-  max_applicants: number
-  applicant_count: number
-  is_applied: boolean
-  applicant_exam_uuid?: string
-}
+import type { ExamHistoryItem } from '@/types/studentExam'
 
 const router = useRouter()
-const availableExams = ref<AvailableExam[]>([])
-const loading = ref(false)
+const examHistoryStore = useExamHistoryStore()
 
 onMounted(() => {
-  fetchAvailableExams()
+  examHistoryStore.fetchExamHistory()
 })
 
-async function fetchAvailableExams() {
-  loading.value = true
-  try {
-    const response = await api.get('/upcoming-exams/')
-    availableExams.value = response.data
-  } catch (error) {
-    console.error('Failed to fetch exams:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const columnHelper = createColumnHelper<AvailableExam>()
+const columnHelper = createColumnHelper<ExamHistoryItem>()
 const columns = [
-  columnHelper.accessor('title', {
+  columnHelper.accessor('exam.title', {
+    id: 'title',
     header: ({ column }) =>
       h(
         Button,
@@ -86,94 +59,123 @@ const columns = [
         () => ['Exam Title', h(ChevronsUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => 
-      h('div', { class: 'font-medium' }, row.original.title),
+      h('div', { class: 'font-medium' }, row.original.exam.title),
   }),
-  columnHelper.accessor('date', {
+  columnHelper.accessor('exam.date', {
+    id: 'date',
     header: 'Exam Date',
     cell: ({ row }) =>
       h('div', { class: 'text-sm' }, 
-        new Date(row.original.date).toLocaleDateString('en-US', {
+        new Date(row.original.exam.date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
           day: 'numeric'
         })
       ),
   }),
-  columnHelper.accessor('duration_minutes', {
-    header: 'Duration',
-    cell: ({ row }) => 
-      h('div', { class: 'text-sm' }, `${row.original.duration_minutes} mins`),
-  }),
-  columnHelper.display({
-    id: 'slots',
-    header: 'Available Slots',
+  columnHelper.accessor('status', {
+    header: 'Status',
     cell: ({ row }) => {
-      const remaining = row.original.max_applicants - row.original.applicant_count
-      const percentage = (row.original.applicant_count / row.original.max_applicants) * 100
-      const color = percentage >= 80 ? 'text-red-600' : percentage >= 50 ? 'text-yellow-600' : 'text-green-600'
+      const status = row.original.status
+      const variants: Record<string, any> = {
+        completed: { class: 'bg-green-100 text-green-800 border-green-300' },
+        in_progress: { class: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+        not_started: { class: 'bg-gray-100 text-gray-800 border-gray-300' },
+      }
+      return h(Badge, {
+        variant: 'outline',
+        class: cn('capitalize', variants[status]?.class)
+      }, () => status.replace('_', ' '))
+    },
+  }),
+  columnHelper.accessor('recommendation_score', {
+    id: 'score',
+    header: ({ column }) =>
+      h(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Score', h(ChevronsUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) => {
+      const score = row.original.recommendation_score
+      if (score === null) return h('span', { class: 'text-gray-400' }, '-')
       
-      return h('div', { class: 'flex items-center gap-2' }, [
-        h(Users, { class: `h-4 w-4 ${color}` }),
-        h('span', { class: `text-sm font-medium ${color}` }, 
-          `${remaining}/${row.original.max_applicants}`
-        )
+      const scoreClass = score >= 80 ? 'text-green-600 font-bold' : 
+                        score >= 70 ? 'text-blue-600 font-semibold' : 
+                        score >= 60 ? 'text-yellow-600' : 'text-red-600'
+      
+      return h('span', { class: scoreClass }, `${score}%`)
+    },
+  }),
+  columnHelper.accessor('recommended_course', {
+    id: 'course',
+    header: 'Recommended Course',
+    cell: ({ row }) => {
+      const course = row.original.recommended_course
+      if (!course) return h('span', { class: 'text-gray-400 text-sm' }, 'N/A')
+      return h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'font-medium text-sm' }, course.name),
+        h('span', { class: 'text-xs text-gray-500' }, course.code),
       ])
     },
   }),
-  columnHelper.accessor('is_applied', {
-    header: 'Status',
+  columnHelper.display({
+    id: 'questions',
+    header: 'Progress',
     cell: ({ row }) => {
-      const applied = row.original.is_applied
-      return h(Badge, {
-        variant: applied ? 'default' : 'outline',
-        class: applied ? 'bg-blue-100 text-blue-800 border-blue-300' : ''
-      }, () => applied ? 'Applied' : 'Not Applied')
+      const { attempted_questions, total_questions } = row.original
+      const percentage = total_questions > 0 ? (attempted_questions / total_questions) * 100 : 0
+      return h('div', { class: 'flex flex-col gap-1' }, [
+        h('span', { class: 'text-sm font-medium' }, `${attempted_questions}/${total_questions}`),
+        h('div', { class: 'w-full bg-gray-200 rounded-full h-1.5' }, [
+          h('div', {
+            class: 'bg-blue-600 h-1.5 rounded-full transition-all',
+            style: { width: `${percentage}%` }
+          })
+        ])
+      ])
     },
+  }),
+  columnHelper.accessor('exam_attempt_number', {
+    id: 'attempt',
+    header: 'Attempt',
+    cell: ({ row }) => 
+      h('div', { class: 'text-center' }, 
+        h(Badge, { variant: 'outline' }, () => `#${row.original.exam_attempt_number}`)
+      ),
   }),
   columnHelper.display({
     id: 'actions',
     header: 'Actions',
     cell: ({ row }) => {
-      const exam = row.original
+      const canContinue = row.original.status === 'in_progress' || row.original.status === 'not_started'
       
-      if (exam.is_applied && exam.applicant_exam_uuid) {
-        return h(Button, {
+      return h('div', { class: 'flex gap-2' }, [
+        canContinue && h(Button, {
           size: 'sm',
-          onClick: () => router.push({ name: 'take-exam', params: { uuid: exam.applicant_exam_uuid } })
-        }, () => 'Start Exam')
-      }
-      
-      return h(Button, {
-        size: 'sm',
-        variant: 'outline',
-        onClick: () => handleApply(exam.uuid)
-      }, () => 'Apply')
+          onClick: () => router.push({ name: 'take-exam', params: { uuid: row.original.uuid } })
+        }, () => row.original.status === 'in_progress' ? 'Continue' : 'Start'),
+        
+        row.original.status === 'completed' && h(Button, {
+          size: 'sm',
+          variant: 'outline',
+          onClick: () => router.push({ name: 'exam-result', params: { uuid: row.original.uuid } })
+        }, () => 'View Results')
+      ])
     },
   }),
 ]
 
-async function handleApply(examUuid: string) {
-  try {
-    const response = await api.post(`/upcoming-exams/${examUuid}/apply/`, {
-      exam_uuid: examUuid
-    })
-    await fetchAvailableExams()
-    toast.success(response.data.message || 'Successfully applied to exam')
-  } catch (error: any) {
-    console.error('Failed to apply:', error)
-    const errorMessage = error.response?.data?.[0] || error.response?.data?.message || 'Failed to apply for exam'
-    toast.error(errorMessage)
-  }
-}
-
-
-const sorting = ref<SortingState>([{ id: 'date', desc: false }])
+const sorting = ref<SortingState>([{ id: 'date', desc: true }])
 const columnFilters = ref<ColumnFiltersState>([])
 const columnVisibility = ref<VisibilityState>({})
 
 const table = useVueTable({
   get data() {
-    return availableExams.value
+    return examHistoryStore.examHistory
   },
   columns,
   getCoreRowModel: getCoreRowModel(),
@@ -196,7 +198,47 @@ const table = useVueTable({
       return columnVisibility.value
     },
   },
+  initialState: {
+    pagination: {
+      pageSize: 10,
+    },
+  },
 })
+
+const stats = computed(() => [
+  {
+    title: 'Total Exams',
+    value: examHistoryStore.totalExams,
+    icon: BookOpen,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+  },
+  {
+    title: 'Average Score',
+    value: `${examHistoryStore.averageScore}%`,
+    icon: Trophy,
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+  },
+  {
+    title: 'Completed',
+    value: examHistoryStore.completedExams.length,
+    icon: Calendar,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100',
+  },
+  {
+    title: 'In Progress',
+    value: examHistoryStore.inProgressExams.length,
+    icon: Clock,
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-100',
+  },
+])
+
+async function handleRefresh() {
+  await examHistoryStore.fetchExamHistory()
+}
 </script>
 
 <template>
@@ -204,21 +246,38 @@ const table = useVueTable({
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Available Exams</h1>
-        <p class="text-gray-500 mt-1">Browse and apply for upcoming exams</p>
+        <h1 class="text-3xl font-bold text-gray-900">Exam History</h1>
+        <p class="text-gray-500 mt-1">Track your exam performance and progress</p>
       </div>
-      <Button @click="fetchAvailableExams" variant="outline" :disabled="loading">
-        <RefreshCcw :class="['h-4 w-4 mr-2', loading && 'animate-spin']" />
+      <Button @click="handleRefresh" variant="outline" :disabled="examHistoryStore.loading">
+        <RefreshCcw :class="['h-4 w-4 mr-2', examHistoryStore.loading && 'animate-spin']" />
         Refresh
       </Button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card v-for="stat in stats" :key="stat.title" class="hover:shadow-md transition-shadow">
+        <CardContent class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">{{ stat.title }}</p>
+              <p class="text-2xl font-bold mt-2">{{ stat.value }}</p>
+            </div>
+            <div :class="[stat.bgColor, 'p-3 rounded-lg']">
+              <component :is="stat.icon" :class="[stat.color, 'h-6 w-6']" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
     <!-- Table Card -->
     <Card class="shadow-md">
       <CardHeader>
-        <CardTitle>Upcoming Exams</CardTitle>
+        <CardTitle>Exam Records</CardTitle>
         <CardDescription>
-          View and apply for available entrance examinations
+          View all your exam attempts and their results
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -269,12 +328,12 @@ const table = useVueTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              <template v-if="loading">
+              <template v-if="examHistoryStore.loading">
                 <TableRow>
                   <TableCell :colspan="columns.length" class="text-center h-24">
                     <div class="flex items-center justify-center gap-2">
                       <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-                      <span>Loading available exams...</span>
+                      <span>Loading exam history...</span>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -298,10 +357,10 @@ const table = useVueTable({
               <TableRow v-else>
                 <TableCell :colspan="columns.length" class="text-center h-32">
                   <div class="flex flex-col items-center gap-3 text-gray-500">
-                    <FileText class="h-12 w-12 text-gray-300" />
+                    <BookOpen class="h-12 w-12 text-gray-300" />
                     <div>
-                      <p class="font-medium text-lg">No available exams</p>
-                      <p class="text-sm mt-1">Check back later for upcoming examinations</p>
+                      <p class="font-medium text-lg">No exam history found</p>
+                      <p class="text-sm mt-1">Start taking exams to see your history here</p>
                     </div>
                   </div>
                 </TableCell>

@@ -76,12 +76,33 @@ const createQuestion = async (questionData: CreateQuestionData) => {
     }
   }
 
+// const createChoice = async (choiceData: Choice) => {
+//   loading.value = true
+//   error.value = null
+
+//   try {
+//     const response = await api.post(`/questions/${choiceData.question_uuid}/choices/`, {
+//       label: choiceData.label,
+//       text: choiceData.text,
+//       is_correct: choiceData.is_correct
+//     })
+//     return response.data
+//   } catch (err: any) {
+//     error.value = err.response?.data?.detail || err.message || 'Failed to create choice'
+//     throw err
+//   } finally {
+//     loading.value = false
+//   }
+// }
+
+
 const createChoice = async (choiceData: Choice) => {
   loading.value = true
   error.value = null
 
   try {
-    const response = await api.post(`/questions/${choiceData.question_uuid}/choices/`, {
+    const response = await api.post(`/choices/`, {
+      question_uuid: choiceData.question_uuid,
       label: choiceData.label,
       text: choiceData.text,
       is_correct: choiceData.is_correct
@@ -94,7 +115,6 @@ const createChoice = async (choiceData: Choice) => {
     loading.value = false
   }
 }
-
   const updateChoice = async (choiceUuid: string, choiceData: Partial<Choice>) => {
     loading.value = true
     error.value = null
